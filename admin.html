@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard | League Setup</title>
+    <title>Admin Dashboard | League & Teams</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -26,14 +26,51 @@
                 <label>League Logo URL</label>
                 <input type="text" id="league-logo" placeholder="Paste image link here">
             </div>
-            <button onclick="saveLeagueSettings()">Save & Move to Teams</button>
+            <button onclick="saveLeagueSettings()">Save League Info</button>
+        </section>
+
+        <!-- Section 2: Team Setup -->
+        <section id="team-setup" class="setup-card" style="margin-top: 30px;">
+            <h2>Step 2: Add Participating Teams</h2>
+            <div class="form-grid">
+                <div class="input-group">
+                    <label>Team Name</label>
+                    <input type="text" id="team-name" placeholder="Full Team Name">
+                </div>
+                <div class="input-group">
+                    <label>Short Form</label>
+                    <input type="text" id="team-short" placeholder="e.g. MI, CSK, RCB">
+                </div>
+                <div class="input-group">
+                    <label>Team Logo URL</label>
+                    <input type="text" id="team-logo" placeholder="Paste image link">
+                </div>
+                <div class="input-group">
+                    <label>Manager Name</label>
+                    <input type="text" id="manager-name" placeholder="Manager Name">
+                </div>
+            </div>
+            <button onclick="handleAddTeam()" style="background-color: #22c55e;">Add Team</button>
+
+            <div id="teams-list-container" style="margin-top: 20px;">
+                <h3>Registered Teams</h3>
+                <div id="teams-display">
+                    <!-- Teams will appear here automatically -->
+                </div>
+            </div>
+
+            <button onclick="goToAuctionSetup()" id="next-btn" style="margin-top: 20px; display:none; background-color: #f59e0b;">All Teams Added? Start Auction Setup</button>
         </section>
     </div>
 
     <script type="module">
-        import { logout, saveLeague } from './script.js';
+        import { logout, saveLeague, addTeam } from './script.js';
         window.handleLogout = logout;
         window.saveLeagueSettings = saveLeague;
+        window.handleAddTeam = addTeam;
+        
+        // We will add logic to move to next step later
+        window.goToAuctionSetup = () => { alert("Moving to Auction Rules Setup..."); };
     </script>
 </body>
 </html>
