@@ -2,7 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getFirestore, doc, getDoc, setDoc, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// --- YOUR FIREBASE CONFIG ---
+// --- FIREBASE CONFIG ---
 const firebaseConfig = {
   apiKey: "AIzaSyCF5fo4zu4G7qD_wllxSy5cJPp1BTMCPog",
   authDomain: "cricketauction-dac71.firebaseapp.com",
@@ -17,86 +17,86 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// --- 1. LOGIN LOGIC ---
+// --- LOGIN ---
 export async function loginUser() {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
-    const errorMsg = document.getElementById('error-message');
-    
-    if(errorMsg) errorMsg.innerText = "Connecting...";
-
     try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         const userDoc = await getDoc(doc(db, "users", user.uid));
-        
         if (userDoc.exists() && userDoc.data().role === "admin") {
             window.location.href = "admin.html";
-        } else {
-            alert("Success! Welcome Team User.");
         }
-    } catch (error) {
-        if(errorMsg) errorMsg.innerText = "Login failed. Check credentials.";
-    }
+    } catch (error) { alert("Login failed"); }
 }
 
-// --- 2. LEAGUE SETUP LOGIC (Improved Flow) ---
+// --- STEP 1: SAVE LEAGUE ---
 export async function saveLeague() {
     const name = document.getElementById('league-name').value;
     const logo = document.getElementById('league-logo').value;
-    
-    if (!name) { alert("Please enter a League Name"); return; }
-
+    if (!name) { alert("Enter League Name"); return; }
     try {
-        await setDoc(doc(db, "settings", "leagueInfo"), {
-            leagueName: name,
-            leagueLogo: logo
-        });
-        
-        // UI ANIMATION & FLOW:
-        // 1. Show the success badge
+        await setDoc(doc(db, "settings", "leagueInfo"), { leagueName: name, leagueLogo: logo });
         document.getElementById('league-saved-msg').classList.remove('hidden');
-        // 2. Disable inputs so they don't look messy
         document.getElementById('league-name').disabled = true;
         document.getElementById('league-logo').disabled = true;
-        // 3. Hide the save button
         document.getElementById('save-league-btn').style.display = 'none';
-        // 4. Reveal the Team Section with a smooth fade
-        const teamSection = document.getElementById('team-section');
-        teamSection.classList.remove('hidden');
-        teamSection.scrollIntoView({ behavior: 'smooth' });
-        
-    } catch (e) { alert("Error saving: " + e.message); }
+        document.getElementById('team-section').classList.remove('hidden');
+    } catch (e) { alert("Error: " + e.message); }
 }
 
-// --- 3. TEAM SETUP LOGIC ---
+// --- STEP 2: ADD TEAM ---
 export async function addTeam() {
     const tName = document.getElementById('team-name').value;
     const tShort = document.getElementById('team-short').value;
     const tLogo = document.getElementById('team-logo').value;
     const mName = document.getElementById('manager-name').value;
-
-    if (!tName || !tShort) { alert("Fill Team Name and Short Form"); return; }
-
+    if (!tName || !tShort) { alert("Fill Name and Short Form"); return; }
     try {
-        await addDoc(collection(db, "teams"), {
-            teamName: tName,
-            teamShort: tShort,
-            teamLogo: tLogo,
-            managerName: mName,
-            timestamp: Date.now()
-        });
-
-        // Clear inputs for next entry
+        await addDoc(collection(db, "teams"), { teamName: tName, teamShort: tShort, teamLogo: tLogo, managerName: mName });
         document.getElementById('team-name').value = "";
         document.getElementById('team-short').value = "";
         document.getElementById('team-logo').value = "";
         document.getElementById('manager-name').value = "";
-        
     } catch (e) { console.error(e); }
 }
 
-// --- 4. LIVE LISTENER (Updates Team List Automatically) ---
+// --- STEP 3: SAVE AUCTION RULES ---
+export async function saveRules() {
+    const rules = {
+        purse: document.getElementById('purse-value').value,
+        minPlayers: document.getElementById('min-players').value,
+        maxPlayers: document.getElementById('max-players').value,
+        minBat: document.getElementById('min-bat').value,
+        minBowl: document.getElementById('min-bowl').value,
+        minAR: document.getElementById('min-ar').value,
+        minWK: document.getElementById('min-wk').value,
+        categories: []
+    };
+
+    const names = document.getElementsByClassName('cat-name');
+    const bases = document.getElementsByClassName('cat-base');
+    const incs = document.getElementsByClassName('cat-inc');
+
+    for(let i=0; i<names.length; i++) {
+        if(names[i].value) {
+            rules.categories.push({
+                name: names[i].value,
+                basePrice: bases[i].value,
+                increment: incs[i].value
+            });
+        }
+    }
+
+    try {
+        await setDoc(doc(db, "settings", "auctionRules"), rules);
+        alert("Auction Rules Saved!");
+        // We will trigger the Player Pool section in the next step
+    } catch (e) { alert("Save failed: " + e.message); }
+}
+
+// --- LIVE TEAM LISTENER ---
 const teamsDisplay = document.getElementById('teams-display');
 if (teamsDisplay) {
     onSnapshot(collection(db, "teams"), (snapshot) => {
@@ -105,17 +105,11 @@ if (teamsDisplay) {
             const team = doc.data();
             const teamDiv = document.createElement('div');
             teamDiv.className = "team-pill";
-            teamDiv.innerHTML = `
-                <img src="${team.teamLogo || 'https://via.placeholder.com/50'}" style="width:40px;height:40px;border-radius:50%;margin-bottom:10px;object-fit:cover;">
-                <strong>${team.teamShort}</strong>
-                <span style="font-size:11px; color:#94a3b8;">${team.teamName}</span>
-            `;
+            teamDiv.innerHTML = `<img src="${team.teamLogo || 'https://via.placeholder.com/40'}" class="team-logo-small"><strong>${team.teamShort}</strong>`;
             teamsDisplay.appendChild(teamDiv);
         });
     });
 }
 
-// --- 5. LOGOUT ---
-export function logout() {
-    signOut(auth).then(() => { window.location.href = "index.html"; });
-}
+// --- LOGOUT ---
+export function logout() { signOut(auth).then(() => { window.location.href = "index.html"; }); }
