@@ -4,7 +4,7 @@ import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstati
 
 // --- FIREBASE CONFIG ---
 const firebaseConfig = {
-  apiKey: "AIzaSyCF5fo4zu4G7qD_wllxSy5cJPp1BTMCPog",
+  apiKey: "AIzaSyCF5fo4zu4G7qD_wllxSy5cJpp1BTMCPog",
   authDomain: "cricketauction-dac71.firebaseapp.com",
   projectId: "cricketauction-dac71",
   storageBucket: "cricketauction-dac71.firebasestorage.app",
@@ -91,8 +91,8 @@ export async function saveRules() {
 
     try {
         await setDoc(doc(db, "settings", "auctionRules"), rules);
-        alert("Auction Rules Saved!");
-        // We will trigger the Player Pool section in the next step
+        alert("Auction Rules Saved in USD ($)!");
+        // Next step logic will go here
     } catch (e) { alert("Save failed: " + e.message); }
 }
 
