@@ -7,14 +7,12 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
     <div class="admin-container">
         <header>
             <h1>AUCTION<span>PRO</span></h1>
             <button onclick="handleLogout()" class="logout-btn-top">Logout</button>
         </header>
 
-        <!-- STEP 1: LEAGUE SETUP -->
         <section id="league-section" class="setup-card">
             <h2>Step 1: League Setup</h2>
             <div id="league-saved-msg" class="hidden"><div class="saved-badge">✓ League Info Saved</div></div>
@@ -22,14 +20,10 @@
                 <label>League Name</label>
                 <input type="text" id="league-name" placeholder="Enter League Name">
             </div>
-            <div class="input-group">
-                <label>Logo URL</label>
-                <input type="text" id="league-logo" placeholder="https://...">
-            </div>
+            <div class="input-group"><label>Logo URL</label><input type="text" id="league-logo"></div>
             <button class="btn-primary" id="save-league-btn" onclick="saveLeagueSettings()">Confirm League Details</button>
         </section>
 
-        <!-- STEP 2: TEAM SETUP -->
         <section id="team-section" class="setup-card hidden">
             <h2>Step 2: Add Teams</h2>
             <div class="form-grid">
@@ -38,28 +32,17 @@
                 <div class="input-group"><label>Manager</label><input type="text" id="manager-name"></div>
                 <div class="input-group"><label>Team Logo URL</label><input type="text" id="team-logo"></div>
             </div>
-            <button class="btn-success" onclick="handleAddTeam()">+ Add Team to League</button>
-            <div id="teams-list-container">
-                <h3 class="section-label">PARTICIPATING TEAMS</h3>
-                <div id="teams-display" class="team-grid"></div>
-            </div>
+            <button class="btn-success" onclick="handleAddTeam()">+ Add Team</button>
+            <div id="teams-display" class="team-grid"></div>
             <button class="btn-primary" style="margin-top:40px; background:#f59e0b;" id="go-to-rules-btn" onclick="showRulesSection()">Next: Auction Rules →</button>
         </section>
 
-        <!-- STEP 3: AUCTION RULES -->
         <section id="rules-section" class="setup-card hidden">
             <h2>Step 3: Auction Rules</h2>
             <div class="rules-grid">
                 <div class="input-group"><label>Purse per Team ($)</label><input type="number" id="purse-value"></div>
                 <div class="input-group"><label>Min Players</label><input type="number" id="min-players"></div>
                 <div class="input-group"><label>Max Players</label><input type="number" id="max-players"></div>
-            </div>
-            <h3 class="sub-title">Role Limits</h3>
-            <div class="rules-grid">
-                <div class="input-group"><label>Min Batsmen</label><input type="number" id="min-bat" value="3"></div>
-                <div class="input-group"><label>Min Bowlers</label><input type="number" id="min-bowl" value="3"></div>
-                <div class="input-group"><label>Min All-Rounders</label><input type="number" id="min-ar" value="2"></div>
-                <div class="input-group"><label>Min WKs</label><input type="number" id="min-wk" value="1"></div>
             </div>
             <h3 class="sub-title">Categories</h3>
             <div id="category-inputs">
@@ -74,44 +57,26 @@
                     <input type="number" placeholder="Inc ($)" class="cat-inc">
                 </div>
             </div>
-            <button class="btn-primary" style="background:#8b5cf6; margin-top:20px;" id="save-rules-btn" onclick="handleSaveRules()">Confirm & Save Rules</button>
+            <button class="btn-primary" style="background:#8b5cf6;" onclick="handleSaveRules()">Confirm & Save Rules</button>
         </section>
 
-        <!-- STEP 4: PLAYER POOL -->
         <section id="player-section" class="setup-card hidden">
             <h2>Step 4: Player Pool</h2>
             <div class="form-grid">
                 <div class="input-group"><label>Player Name</label><input type="text" id="player-name"></div>
-                <div class="input-group"><label>Source Team / Club</label><input type="text" id="player-source"></div>
-                <div class="input-group">
-                    <label>Role</label>
-                    <select id="player-role" class="custom-select">
-                        <option value="Batsman">Batsman</option>
-                        <option value="Bowler">Bowler</option>
-                        <option value="All-Rounder">All-Rounder</option>
-                        <option value="Wicket Keeper">Wicket Keeper</option>
-                    </select>
-                </div>
                 <div class="input-group">
                     <label>Category</label>
-                    <select id="player-category" class="custom-select" onchange="updateBasePrice()">
-                        <option value="">Select Category</option>
-                        <!-- Options will be filled by code -->
-                    </select>
+                    <select id="player-category" class="custom-select" onchange="updateBasePrice()"><option value="">Select</option></select>
                 </div>
                 <div class="input-group"><label>Base Price ($)</label><input type="number" id="player-base-price"></div>
                 <div class="input-group"><label>Photo URL</label><input type="text" id="player-photo"></div>
+                <div class="input-group"><label>Role</label><select id="player-role" class="custom-select"><option>Batsman</option><option>Bowler</option><option>All-Rounder</option><option>Wicket Keeper</option></select></div>
+                <div class="input-group"><label>Source Team</label><input type="text" id="player-source"></div>
             </div>
-            <button class="btn-success" onclick="handleAddPlayer()">+ Add Player to Pool</button>
-
-            <div id="player-list-container" style="margin-top:30px;">
-                <h3 class="section-label">AUCTION POOL</h3>
-                <div id="players-display" class="player-grid"></div>
-            </div>
-            
-            <button class="btn-primary" style="margin-top:40px; background:#f43f5e;" onclick="startAuctionSetup()">Finalize & Launch Auction →</button>
+            <button class="btn-success" onclick="handleAddPlayer()">+ Add Player</button>
+            <div id="players-display" class="player-grid"></div>
+            <button class="btn-primary" style="margin-top:40px; background:#f43f5e;" onclick="window.location.href='auction.html'">Finalize & Launch Auction →</button>
         </section>
-
     </div>
 
     <script type="module">
@@ -122,14 +87,7 @@
         window.handleSaveRules = saveRules;
         window.handleAddPlayer = addPlayer;
         window.updateBasePrice = updateBasePrice;
-
-        window.showRulesSection = () => {
-            document.getElementById('rules-section').classList.remove('hidden');
-            document.getElementById('go-to-rules-btn').style.display = 'none';
-            document.getElementById('rules-section').scrollIntoView({ behavior: 'smooth' });
-        };
-        
-        window.startAuctionSetup = () => { alert("Almost ready! We will build the Live Auction Screen next."); };
+        window.showRulesSection = () => { document.getElementById('rules-section').classList.remove('hidden'); document.getElementById('go-to-rules-btn').style.display='none'; };
     </script>
 </body>
 </html>
