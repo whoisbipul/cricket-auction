@@ -4,7 +4,7 @@ import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/fir
 
 // Your Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyCF5fo4zu4G7qD_wllxSy5cJpp1BTMCPog",
+  apiKey: "AIzaSyCF5fo4zu4G7qD_wllxSy5cJPp1BTMCPog",
   authDomain: "cricketauction-dac71.firebaseapp.com",
   projectId: "cricketauction-dac71",
   storageBucket: "cricketauction-dac71.firebasestorage.app",
