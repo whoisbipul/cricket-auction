@@ -77,3 +77,57 @@ export function logout() {
         window.location.href = "index.html";
     });
 }
+// --- TEAM SETUP LOGIC ---
+import { collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+export async function addTeam() {
+    const tName = document.getElementById('team-name').value;
+    const tShort = document.getElementById('team-short').value;
+    const tLogo = document.getElementById('team-logo').value;
+    const mName = document.getElementById('manager-name').value;
+
+    if (!tName || !tShort) {
+        alert("Please fill at least Team Name and Short Form");
+        return;
+    }
+
+    try {
+        // This adds a new team to a collection called 'teams'
+        await addDoc(collection(db, "teams"), {
+            teamName: tName,
+            teamShort: tShort,
+            teamLogo: tLogo,
+            managerName: mName,
+            timestamp: Date.now()
+        });
+
+        // Clear the inputs for the next team
+        document.getElementById('team-name').value = "";
+        document.getElementById('team-short').value = "";
+        document.getElementById('team-logo').value = "";
+        document.getElementById('manager-name').value = "";
+        
+        alert("Team Added!");
+    } catch (e) {
+        console.error("Error adding team: ", e);
+    }
+}
+
+// This special function listens to the database and updates the list on your screen LIVE
+const teamsDisplay = document.getElementById('teams-display');
+const nextBtn = document.getElementById('next-btn');
+
+if (teamsDisplay) {
+    onSnapshot(collection(db, "teams"), (snapshot) => {
+        teamsDisplay.innerHTML = ""; // Clear list
+        if(snapshot.size > 0) nextBtn.style.display = "block"; // Show next button if teams exist
+        
+        snapshot.forEach((doc) => {
+            const team = doc.data();
+            const teamDiv = document.createElement('div');
+            teamDiv.className = "team-pill";
+            teamDiv.innerHTML = `<strong>${team.teamShort}</strong> - ${team.teamName} (${team.managerName})`;
+            teamsDisplay.appendChild(teamDiv);
+        });
+    });
+}
