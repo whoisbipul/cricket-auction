@@ -1,10 +1,11 @@
+// VERSION 1.1 - AUTH REPAIR
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// Your Firebase configuration (Using the keys from your screenshot)
+// Your exact keys from the screenshot
 const firebaseConfig = {
-  apiKey: "AIzaSyCF5fo4zu4G7qD_wllxSy5cJpp1BTMCPog",
+  apiKey: "AIzaSyCF5fo4zu4G7qD_wllxSy5cJPp1BTMCPog",
   authDomain: "cricketauction-dac71.firebaseapp.com",
   projectId: "cricketauction-dac71",
   storageBucket: "cricketauction-dac71.firebasestorage.app",
@@ -18,71 +19,61 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// --- 1. LOGIN LOGIC ---
+// LOGIN LOGIC
 export async function loginUser() {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     const errorMsg = document.getElementById('error-message');
     
-    if(!email || !password) {
-        errorMsg.innerText = "Please enter both email and password.";
-        return;
-    }
+    errorMsg.innerText = "Connecting to League...";
+    errorMsg.style.color = "#38bdf8";
 
     try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
-        // Now we check the "users" folder in the database to see if this user is an admin
+        // Fetch User Role from Firestore
         const userDoc = await getDoc(doc(db, "users", user.uid));
         
         if (userDoc.exists()) {
             const userData = userDoc.data();
             if (userData.role === "admin") {
-                // SUCCESS: Redirect to the Admin page
                 window.location.href = "admin.html";
             } else {
-                // Redirect to Team page (we will build this later)
-                alert("Welcome Team Member! Team dashboard coming soon.");
+                alert("Welcome Team User!");
+                // window.location.href = "team.html";
             }
         } else {
             errorMsg.innerText = "User role not found in database.";
         }
     } catch (error) {
-        console.error(error);
-        errorMsg.innerText = "Login failed: " + error.message;
+        console.error("Login Error:", error.code);
+        errorMsg.innerText = "Login failed. Check email/password.";
         errorMsg.style.color = "#ff4d4d";
     }
 }
 
-// --- 2. LEAGUE SETUP LOGIC (For admin.html) ---
+// SAVE LEAGUE LOGIC (For admin.html)
 export async function saveLeague() {
     const name = document.getElementById('league-name').value;
     const logo = document.getElementById('league-logo').value;
-
-    if (!name) {
-        alert("Please enter a League Name");
-        return;
-    }
+    if (!name) { alert("Enter League Name"); return; }
 
     try {
-        // Save the league info to a 'settings' collection in Firestore
         await setDoc(doc(db, "settings", "leagueInfo"), {
             leagueName: name,
             leagueLogo: logo
         });
-        alert("League Settings Saved successfully!");
-    } catch (e) {
-        console.error("Error saving league: ", e);
-        alert("Error saving league. Check console.");
+        alert("League Saved Successfully!");
+    } catch (e) { 
+        console.error(e);
+        alert("Save failed: " + e.message); 
     }
 }
 
-// --- 3. LOGOUT LOGIC ---
+// LOGOUT LOGIC
 export function logout() {
     signOut(auth).then(() => {
         window.location.href = "index.html";
-    }).catch((error) => {
-        console.error("Logout Error", error);
     });
 }
