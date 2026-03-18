@@ -30,8 +30,18 @@ export async function loginUser() {
     try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
-        alert("Success! Logged in as: " + user.email);
+// Check the user's role in the database
+        const userDoc = await getDoc(doc(db, "users", user.uid));
         
+        if (userDoc.exists()) {
+            const userData = userDoc.data();
+            if (userData.role === "admin") {
+                window.location.href = "admin.html"; // This opens the admin page
+            } else {
+                alert("Welcome, Team User!");
+                // window.location.href = "team.html";
+            }
+        }        
         // In the next step, we will create the redirect to the Admin Dashboard
     } catch (error) {
         console.error(error);
