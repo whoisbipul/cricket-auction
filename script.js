@@ -39,3 +39,35 @@ export async function loginUser() {
         errorMsg.style.color = "#ff4d4d";
     }
 }
+// --- ADMIN DASHBOARD FUNCTIONS ---
+
+// 1. Function to Save League Name
+export async function saveLeague() {
+    const name = document.getElementById('league-name').value;
+    const logo = document.getElementById('league-logo').value;
+
+    if (!name) {
+        alert("Please enter a League Name");
+        return;
+    }
+
+    try {
+        // This saves the league info to a special folder in your database called 'settings'
+        import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        await setDoc(doc(db, "settings", "leagueInfo"), {
+            leagueName: name,
+            leagueLogo: logo
+        });
+        alert("League Settings Saved!");
+        // We will add the redirect to Team Setup here in the next step
+    } catch (e) {
+        console.error("Error saving league: ", e);
+    }
+}
+
+// 2. Function to Logout
+export function logout() {
+    auth.signOut().then(() => {
+        window.location.href = "index.html";
+    });
+}
