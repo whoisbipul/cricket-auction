@@ -3,40 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIVE AUCTION | Stage</title>
+    <title>LIVE STAGE | Auction Pro</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="auction-container">
-        <header class="auction-header">
-            <h1 id="live-league-name">AUCTION LIVE</h1>
-            <div id="timer-display">30s</div>
+        <header>
+            <h1 id="live-league-name">AUCTION<span>LIVE</span></h1>
+            <div id="timer-display" style="font-size:3rem; font-weight:900; color:var(--danger);">30s</div>
         </header>
 
         <div class="auction-main-grid">
+            <!-- LEFT: PLAYER -->
             <div class="player-stage-card">
-                <div id="player-status-badge" class="status-unsold">WAITING</div>
-                <img id="display-p-img" src="https://via.placeholder.com/250" alt="Player">
-                <h2 id="display-p-name">No Active Player</h2>
-                <p id="display-p-role">---</p>
-                <p>From: <span id="display-p-source">---</span> | Cat: <span id="display-p-cat">---</span></p>
+                <div id="player-status-badge" class="status-badge status-active">ACTIVE</div>
+                <img id="display-p-img" src="https://via.placeholder.com/300" alt="Player">
+                <h2 id="display-p-name">Waiting...</h2>
+                <div style="display:flex; justify-content:center; gap:20px; color:var(--text-muted); font-weight:700;">
+                    <span id="display-p-role">---</span> | <span id="display-p-cat">---</span>
+                </div>
             </div>
 
+            <!-- RIGHT: BIDDING -->
             <div class="bidding-card">
-                <div class="bid-stat"><label>BASE PRICE</label><h3 id="display-p-base">$0</h3></div>
-                <div class="bid-stat high-bid"><label>CURRENT HIGHEST BID</label><h3 id="display-p-current-bid">$0</h3></div>
-                <div class="bid-stat bidder"><label>HIGHEST BIDDER</label><h4 id="display-p-bidder">NONE</h4></div>
+                <div class="bid-stat"><label>Base Price</label><h3 id="display-p-base">$0</h3></div>
+                <div class="bid-stat high-bid"><label>Current Bid</label><h3 id="display-p-current-bid">$0</h3></div>
+                <div class="bid-stat"><label>Highest Bidder</label><h4 id="display-p-bidder" style="color:var(--accent); font-size:1.2rem;">None</h4></div>
 
-                <div id="admin-controls" class="admin-action-box">
-                    <select id="auction-category-select" class="custom-select" style="margin-bottom:10px;"></select>
-                    <button class="btn-primary" onclick="startNextPlayer()">NEXT PLAYER (RANDOM)</button>
-                    <div class="action-row" style="margin-top:10px;">
+                <div id="admin-controls">
+                    <select id="auction-category-select" style="margin-bottom:15px;"></select>
+                    <button class="btn-primary" onclick="startNextPlayer()">GET NEXT PLAYER</button>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
                         <button class="btn-success" onclick="handleSellPlayer()">SOLD</button>
-                        <button class="btn-danger" onclick="handleUnsoldPlayer()">UNSOLD</button>
+                        <button style="background:var(--danger); color:white;" onclick="handleUnsoldPlayer()">UNSOLD</button>
                     </div>
                 </div>
 
-                <div id="team-controls" class="team-action-box">
+                <div id="team-controls">
                     <button class="btn-bid" onclick="placeBid()">BID NOW</button>
                 </div>
             </div>
