@@ -1,154 +1,130 @@
-/* Global Settings */
+/* Import Montserrat */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap');
+
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Montserrat', sans-serif; /* Montserrat applied everywhere */
+    font-family: 'Montserrat', sans-serif;
 }
 
 body {
-    background-color: #0f172a; /* Dark sporty theme */
+    background-color: #0b0e14;
     color: #ffffff;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    overflow: hidden;
+    line-height: 1.6;
+    overflow-y: auto; /* Fixed the scrolling! */
+    min-height: 100vh;
 }
 
-.login-container {
-    background-color: #1e293b;
-    padding: 40px;
-    border-radius: 20px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-    width: 100%;
-    max-width: 400px;
-    text-align: center;
-    border: 1px solid #334155;
+/* Animations */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-.logo-area h1 {
-    font-weight: 700;
-    font-size: 24px;
-    color: #38bdf8;
-    letter-spacing: 2px;
-    margin-bottom: 30px;
+.setup-card {
+    animation: fadeInUp 0.6s ease-out;
 }
 
-h3 {
-    font-weight: 700;
-    font-size: 20px;
-    margin-bottom: 5px;
-}
-
-p {
-    font-size: 14px;
-    color: #94a3b8;
-    margin-bottom: 25px;
-}
-
-input {
-    width: 100%;
-    padding: 14px;
-    margin-bottom: 15px;
-    border-radius: 10px;
-    border: 1px solid #334155;
-    background-color: #0f172a;
-    color: white;
-    font-size: 15px;
-    outline: none;
-    transition: 0.3s;
-}
-
-input:focus {
-    border-color: #38bdf8;
-    box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
-}
-
-button {
-    width: 100%;
-    padding: 14px;
-    background-color: #38bdf8;
-    color: #0f172a;
-    border: none;
-    border-radius: 10px;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: 0.3s;
-    letter-spacing: 1px;
-}
-
-button:hover {
-    background-color: #0ea5e9;
-    transform: translateY(-2px);
-}
-
-#error-message {
-    margin-top: 15px;
-    font-size: 13px;
-}
+/* Layout */
 .admin-container {
-    width: 90%;
-    max-width: 800px;
-    margin: 50px auto;
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 20px;
 }
 
 header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 30px;
+    margin-bottom: 40px;
+    border-bottom: 1px solid #1e293b;
+    padding-bottom: 20px;
 }
 
+h1 { font-weight: 800; letter-spacing: -1px; color: #38bdf8; }
+
+/* Cards */
 .setup-card {
-    background: #1e293b;
-    padding: 30px;
-    border-radius: 15px;
-    border: 1px solid #334155;
+    background: #161b22;
+    padding: 40px;
+    border-radius: 24px;
+    border: 1px solid #30363d;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    margin-bottom: 30px;
+    transition: transform 0.3s ease;
 }
 
-.input-group {
-    margin-bottom: 20px;
-    text-align: left;
+.setup-card:hover {
+    border-color: #38bdf8;
 }
 
-.input-group label {
-    display: block;
-    margin-bottom: 8px;
+h2 { font-weight: 700; margin-bottom: 25px; font-size: 1.5rem; }
+
+/* Inputs */
+.input-group { margin-bottom: 20px; }
+label { display: block; margin-bottom: 8px; font-size: 0.85rem; font-weight: 600; color: #94a3b8; }
+
+input {
+    width: 100%;
+    padding: 14px 18px;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    color: white;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+input:focus {
+    outline: none;
+    border-color: #38bdf8;
+    background: #161b22;
+    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.1);
+}
+
+/* Buttons */
+button {
+    cursor: pointer;
     font-weight: 700;
-    color: #38bdf8;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: none;
+    padding: 14px 28px;
+    border-radius: 12px;
 }
 
-.logout-btn {
-    width: auto;
-    background-color: #ef4444;
-    padding: 8px 15px;
-}
+.btn-primary { background: #38bdf8; color: #0b0e14; width: 100%; }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(56, 189, 248, 0.3); }
 
-.logout-btn:hover {
-    background-color: #dc2626;
-}
-.form-grid {
+.btn-success { background: #22c55e; color: white; margin-top: 10px; width: 100%; }
+.btn-success:hover { background: #16a34a; transform: scale(1.02); }
+
+/* Team List Design */
+.team-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 15px;
-    margin-bottom: 20px;
+    margin-top: 20px;
 }
 
 .team-pill {
-    background: #0f172a;
-    padding: 10px 15px;
-    border-radius: 8px;
-    margin-bottom: 10px;
-    border-left: 4px solid #38bdf8;
-    text-align: left;
-    font-size: 14px;
+    background: #21262d;
+    padding: 15px;
+    border-radius: 16px;
+    border: 1px solid #30363d;
+    text-align: center;
+    animation: fadeInUp 0.4s ease;
 }
 
-#teams-list-container h3 {
-    font-size: 16px;
-    margin-bottom: 15px;
-    color: #94a3b8;
-    text-align: left;
+.team-pill strong { color: #38bdf8; display: block; font-size: 1.2rem; }
+
+/* Status Styles */
+.hidden { display: none; }
+.saved-badge {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+    padding: 10px;
+    border-radius: 8px;
+    text-align: center;
+    margin-bottom: 20px;
 }
