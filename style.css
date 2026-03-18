@@ -88,3 +88,44 @@ button:hover {
     margin-top: 15px;
     font-size: 13px;
 }
+.admin-container {
+    width: 90%;
+    max-width: 800px;
+    margin: 50px auto;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.setup-card {
+    background: #1e293b;
+    padding: 30px;
+    border-radius: 15px;
+    border: 1px solid #334155;
+}
+
+.input-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 700;
+    color: #38bdf8;
+}
+
+.logout-btn {
+    width: auto;
+    background-color: #ef4444;
+    padding: 8px 15px;
+}
+
+.logout-btn:hover {
+    background-color: #dc2626;
+}
