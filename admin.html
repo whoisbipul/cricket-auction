@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | League Setup</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="admin-container">
+        <header>
+            <h1>Admin Control Center</h1>
+            <button onclick="handleLogout()" class="logout-btn">Logout</button>
+        </header>
+
+        <!-- Section 1: League Setup -->
+        <section id="league-setup" class="setup-card">
+            <h2>Step 1: League Setup</h2>
+            <div class="input-group">
+                <label>Fantasy League Name</label>
+                <input type="text" id="league-name" placeholder="e.g. Premier League 2024">
+            </div>
+            <div class="input-group">
+                <label>League Logo URL</label>
+                <input type="text" id="league-logo" placeholder="Paste image link here">
+            </div>
+            <button onclick="saveLeagueSettings()">Save & Move to Teams</button>
+        </section>
+    </div>
+
+    <script type="module">
+        import { logout, saveLeague } from './script.js';
+        window.handleLogout = logout;
+        window.saveLeagueSettings = saveLeague;
+    </script>
+</body>
+</html>
