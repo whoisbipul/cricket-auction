@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <title>Admin Dashboard | Auction Pro</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -11,7 +11,7 @@
     <div class="admin-container">
         <header>
             <h1>AUCTION<span>PRO</span></h1>
-            <button onclick="handleLogout()" style="background:#ef4444; color:white; padding: 8px 16px; font-size:12px;">Logout</button>
+            <button onclick="handleLogout()" class="logout-btn-top">Logout</button>
         </header>
 
         <!-- STEP 1: LEAGUE SETUP -->
@@ -26,16 +26,16 @@
                 <input type="text" id="league-name" placeholder="Enter League Name">
             </div>
             <div class="input-group">
-                <label>Logo URL (Use ImgBB to upload and paste link)</label>
+                <label>Logo URL (Use ImgBB to upload)</label>
                 <input type="text" id="league-logo" placeholder="https://...">
             </div>
             <button class="btn-primary" id="save-league-btn" onclick="saveLeagueSettings()">Confirm League Details</button>
         </section>
 
-        <!-- STEP 2: TEAM SETUP (Hidden until League is saved) -->
+        <!-- STEP 2: TEAM SETUP -->
         <section id="team-section" class="setup-card hidden">
             <h2>Step 2: Add Teams</h2>
-            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+            <div class="form-grid">
                 <div class="input-group"><label>Team Name</label><input type="text" id="team-name"></div>
                 <div class="input-group"><label>Short Form</label><input type="text" id="team-short"></div>
                 <div class="input-group"><label>Manager</label><input type="text" id="manager-name"></div>
@@ -44,19 +44,76 @@
             <button class="btn-success" onclick="handleAddTeam()">+ Add Team to League</button>
 
             <div id="teams-list-container">
-                <h3 style="margin-top:30px; font-size:14px; color:#94a3b8;">PARTICIPATING TEAMS</h3>
+                <h3 class="section-label">PARTICIPATING TEAMS</h3>
                 <div id="teams-display" class="team-grid"></div>
             </div>
 
-            <button class="btn-primary" style="margin-top:40px; background:#f59e0b;" onclick="window.location.reload()">Next: Auction Rules →</button>
+            <button class="btn-primary" style="margin-top:40px; background:#f59e0b;" id="go-to-rules-btn" onclick="showRulesSection()">Next: Auction Rules →</button>
         </section>
+
+        <!-- STEP 3: AUCTION RULES -->
+        <section id="rules-section" class="setup-card hidden">
+            <h2>Step 3: Auction Rules</h2>
+            
+            <div class="rules-grid">
+                <div class="input-group">
+                    <label>Purse per Team</label>
+                    <input type="number" id="purse-value" placeholder="e.g. 100000">
+                </div>
+                <div class="input-group">
+                    <label>Min Players</label>
+                    <input type="number" id="min-players" placeholder="11">
+                </div>
+                <div class="input-group">
+                    <label>Max Players</label>
+                    <input type="number" id="max-players" placeholder="15">
+                </div>
+            </div>
+
+            <h3 class="sub-title">Role Limits (Per Team)</h3>
+            <div class="rules-grid">
+                <div class="input-group"><label>Min Batsmen</label><input type="number" id="min-bat" value="3"></div>
+                <div class="input-group"><label>Min Bowlers</label><input type="number" id="min-bowl" value="3"></div>
+                <div class="input-group"><label>Min All-Rounders</label><input type="number" id="min-ar" value="2"></div>
+                <div class="input-group"><label>Min WKs</label><input type="number" id="min-wk" value="1"></div>
+            </div>
+
+            <h3 class="sub-title">Player Categories & Increments</h3>
+            <div id="category-inputs">
+                <div class="cat-row">
+                    <input type="text" placeholder="Cat Name (e.g. A)" class="cat-name">
+                    <input type="number" placeholder="Base Price" class="cat-base">
+                    <input type="number" placeholder="Increment" class="cat-inc">
+                </div>
+                <div class="cat-row">
+                    <input type="text" placeholder="Cat Name (e.g. B)" class="cat-name">
+                    <input type="number" placeholder="Base Price" class="cat-base">
+                    <input type="number" placeholder="Increment" class="cat-inc">
+                </div>
+                <div class="cat-row">
+                    <input type="text" placeholder="Cat Name (e.g. C)" class="cat-name">
+                    <input type="number" placeholder="Base Price" class="cat-base">
+                    <input type="number" placeholder="Increment" class="cat-inc">
+                </div>
+            </div>
+
+            <button class="btn-primary" style="background:#8b5cf6; margin-top:20px;" onclick="handleSaveRules()">Confirm & Save Rules</button>
+        </section>
+
     </div>
 
     <script type="module">
-        import { logout, saveLeague, addTeam } from './script.js';
+        import { logout, saveLeague, addTeam, saveRules } from './script.js';
         window.handleLogout = logout;
         window.saveLeagueSettings = saveLeague;
         window.handleAddTeam = addTeam;
+        window.handleSaveRules = saveRules;
+
+        window.showRulesSection = () => {
+            document.getElementById('rules-section').classList.remove('hidden');
+            document.getElementById('go-to-rules-btn').style.display = 'none';
+            document.getElementById('rules-section').scrollIntoView({ behavior: 'smooth' });
+        };
     </script>
 </body>
 </html>
