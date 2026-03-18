@@ -7,58 +7,37 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
     <div class="auction-container">
-        <!-- TOP BAR: League Info -->
         <header class="auction-header">
             <h1 id="live-league-name">AUCTION LIVE</h1>
             <div id="timer-display">30s</div>
         </header>
 
         <div class="auction-main-grid">
-            
-            <!-- LEFT: Current Player Card -->
             <div class="player-stage-card">
-                <div id="player-status-badge" class="status-unsold">WAITING...</div>
-                <img id="display-p-img" src="https://via.placeholder.com/200" alt="Player">
-                <h2 id="display-p-name">No Player Active</h2>
+                <div id="player-status-badge" class="status-unsold">WAITING</div>
+                <img id="display-p-img" src="https://via.placeholder.com/250" alt="Player">
+                <h2 id="display-p-name">No Active Player</h2>
                 <p id="display-p-role">---</p>
-                <div class="p-details-row">
-                    <span>Source: <b id="display-p-source">---</b></span>
-                    <span>Category: <b id="display-p-cat">---</b></span>
-                </div>
+                <p>From: <span id="display-p-source">---</span> | Cat: <span id="display-p-cat">---</span></p>
             </div>
 
-            <!-- RIGHT: Bidding Center -->
             <div class="bidding-card">
-                <div class="bid-stat">
-                    <label>BASE PRICE</label>
-                    <h3 id="display-p-base">$0</h3>
-                </div>
-                <div class="bid-stat high-bid">
-                    <label>CURRENT HIGHEST BID</label>
-                    <h3 id="display-p-current-bid">$0</h3>
-                </div>
-                <div class="bid-stat bidder">
-                    <label>HIGHEST BIDDER</label>
-                    <h4 id="display-p-bidder">NONE</h4>
-                </div>
+                <div class="bid-stat"><label>BASE PRICE</label><h3 id="display-p-base">$0</h3></div>
+                <div class="bid-stat high-bid"><label>CURRENT HIGHEST BID</label><h3 id="display-p-current-bid">$0</h3></div>
+                <div class="bid-stat bidder"><label>HIGHEST BIDDER</label><h4 id="display-p-bidder">NONE</h4></div>
 
-                <!-- Admin Controls (Only visible to Admin) -->
                 <div id="admin-controls" class="admin-action-box">
-                    <select id="auction-category-select" class="custom-select">
-                        <option value="">Choose Category to Start</option>
-                    </select>
-                    <button class="btn-primary" onclick="startNextPlayer()">NEXT PLAYER</button>
-                    <div class="action-row">
-                        <button class="btn-success" onclick="handleSellPlayer()">SELL</button>
+                    <select id="auction-category-select" class="custom-select" style="margin-bottom:10px;"></select>
+                    <button class="btn-primary" onclick="startNextPlayer()">NEXT PLAYER (RANDOM)</button>
+                    <div class="action-row" style="margin-top:10px;">
+                        <button class="btn-success" onclick="handleSellPlayer()">SOLD</button>
                         <button class="btn-danger" onclick="handleUnsoldPlayer()">UNSOLD</button>
                     </div>
                 </div>
 
-                <!-- Team Controls (Visible to Teams) -->
                 <div id="team-controls" class="team-action-box">
-                    <button id="bid-btn" class="btn-bid" onclick="placeBid()">BID NOW</button>
+                    <button class="btn-bid" onclick="placeBid()">BID NOW</button>
                 </div>
             </div>
         </div>
