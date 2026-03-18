@@ -3,25 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cricket Auction Login</title>
+    <title>Cricket Auction | Login</title>
+    <!-- Importing Montserrat Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <div class="login-container">
-        <h2 id="league-name-display">Fantasy Cricket Auction</h2>
+        <div class="logo-area">
+            <h1 id="league-name-display">CRICKET AUCTION</h1>
+        </div>
+        
         <div id="login-box">
-            <h3>Login</h3>
+            <h3>Welcome Back</h3>
+            <p>Please login to your account</p>
+            
             <input type="email" id="email" placeholder="Email Address">
             <input type="password" id="password" placeholder="Password">
-            <button onclick="handleLogin()">Login</button>
-            <p id="error-message" style="color: red;"></p>
+            
+            <button onclick="handleLogin()">LOGIN</button>
+            
+            <p id="error-message"></p>
         </div>
     </div>
 
-    <!-- This part connects your website to Firebase -->
+    <!-- This links your script.js file -->
     <script type="module">
-        // We will put the logic in script.js
         import { loginUser } from './script.js';
         window.handleLogin = loginUser;
     </script>
