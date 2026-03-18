@@ -1,9 +1,8 @@
-// VERSION 1.1 - AUTH REPAIR
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// Your exact keys from the screenshot
+// --- YOUR FIREBASE CONFIG ---
 const firebaseConfig = {
   apiKey: "AIzaSyCF5fo4zu4G7qD_wllxSy5cJPp1BTMCPog",
   authDomain: "cricketauction-dac71.firebaseapp.com",
@@ -14,85 +13,72 @@ const firebaseConfig = {
   measurementId: "G-GNP2EJ5G6Q"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// LOGIN LOGIC
+// --- 1. LOGIN LOGIC ---
 export async function loginUser() {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     const errorMsg = document.getElementById('error-message');
     
-    errorMsg.innerText = "Connecting to League...";
-    errorMsg.style.color = "#38bdf8";
+    if(errorMsg) errorMsg.innerText = "Connecting...";
 
     try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
-
-        // Fetch User Role from Firestore
         const userDoc = await getDoc(doc(db, "users", user.uid));
         
-        if (userDoc.exists()) {
-            const userData = userDoc.data();
-            if (userData.role === "admin") {
-                window.location.href = "admin.html";
-            } else {
-                alert("Welcome Team User!");
-                // window.location.href = "team.html";
-            }
+        if (userDoc.exists() && userDoc.data().role === "admin") {
+            window.location.href = "admin.html";
         } else {
-            errorMsg.innerText = "User role not found in database.";
+            alert("Success! Welcome Team User.");
         }
     } catch (error) {
-        console.error("Login Error:", error.code);
-        errorMsg.innerText = "Login failed. Check email/password.";
-        errorMsg.style.color = "#ff4d4d";
+        if(errorMsg) errorMsg.innerText = "Login failed. Check credentials.";
     }
 }
 
-// SAVE LEAGUE LOGIC (For admin.html)
+// --- 2. LEAGUE SETUP LOGIC (Improved Flow) ---
 export async function saveLeague() {
     const name = document.getElementById('league-name').value;
     const logo = document.getElementById('league-logo').value;
-    if (!name) { alert("Enter League Name"); return; }
+    
+    if (!name) { alert("Please enter a League Name"); return; }
 
     try {
         await setDoc(doc(db, "settings", "leagueInfo"), {
             leagueName: name,
             leagueLogo: logo
         });
-        alert("League Saved Successfully!");
-    } catch (e) { 
-        console.error(e);
-        alert("Save failed: " + e.message); 
-    }
+        
+        // UI ANIMATION & FLOW:
+        // 1. Show the success badge
+        document.getElementById('league-saved-msg').classList.remove('hidden');
+        // 2. Disable inputs so they don't look messy
+        document.getElementById('league-name').disabled = true;
+        document.getElementById('league-logo').disabled = true;
+        // 3. Hide the save button
+        document.getElementById('save-league-btn').style.display = 'none';
+        // 4. Reveal the Team Section with a smooth fade
+        const teamSection = document.getElementById('team-section');
+        teamSection.classList.remove('hidden');
+        teamSection.scrollIntoView({ behavior: 'smooth' });
+        
+    } catch (e) { alert("Error saving: " + e.message); }
 }
 
-// LOGOUT LOGIC
-export function logout() {
-    signOut(auth).then(() => {
-        window.location.href = "index.html";
-    });
-}
-// --- TEAM SETUP LOGIC ---
-import { collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
+// --- 3. TEAM SETUP LOGIC ---
 export async function addTeam() {
     const tName = document.getElementById('team-name').value;
     const tShort = document.getElementById('team-short').value;
     const tLogo = document.getElementById('team-logo').value;
     const mName = document.getElementById('manager-name').value;
 
-    if (!tName || !tShort) {
-        alert("Please fill at least Team Name and Short Form");
-        return;
-    }
+    if (!tName || !tShort) { alert("Fill Team Name and Short Form"); return; }
 
     try {
-        // This adds a new team to a collection called 'teams'
         await addDoc(collection(db, "teams"), {
             teamName: tName,
             teamShort: tShort,
@@ -101,33 +87,35 @@ export async function addTeam() {
             timestamp: Date.now()
         });
 
-        // Clear the inputs for the next team
+        // Clear inputs for next entry
         document.getElementById('team-name').value = "";
         document.getElementById('team-short').value = "";
         document.getElementById('team-logo').value = "";
         document.getElementById('manager-name').value = "";
         
-        alert("Team Added!");
-    } catch (e) {
-        console.error("Error adding team: ", e);
-    }
+    } catch (e) { console.error(e); }
 }
 
-// This special function listens to the database and updates the list on your screen LIVE
+// --- 4. LIVE LISTENER (Updates Team List Automatically) ---
 const teamsDisplay = document.getElementById('teams-display');
-const nextBtn = document.getElementById('next-btn');
-
 if (teamsDisplay) {
     onSnapshot(collection(db, "teams"), (snapshot) => {
-        teamsDisplay.innerHTML = ""; // Clear list
-        if(snapshot.size > 0) nextBtn.style.display = "block"; // Show next button if teams exist
-        
+        teamsDisplay.innerHTML = ""; 
         snapshot.forEach((doc) => {
             const team = doc.data();
             const teamDiv = document.createElement('div');
             teamDiv.className = "team-pill";
-            teamDiv.innerHTML = `<strong>${team.teamShort}</strong> - ${team.teamName} (${team.managerName})`;
+            teamDiv.innerHTML = `
+                <img src="${team.teamLogo || 'https://via.placeholder.com/50'}" style="width:40px;height:40px;border-radius:50%;margin-bottom:10px;object-fit:cover;">
+                <strong>${team.teamShort}</strong>
+                <span style="font-size:11px; color:#94a3b8;">${team.teamName}</span>
+            `;
             teamsDisplay.appendChild(teamDiv);
         });
     });
+}
+
+// --- 5. LOGOUT ---
+export function logout() {
+    signOut(auth).then(() => { window.location.href = "index.html"; });
 }
