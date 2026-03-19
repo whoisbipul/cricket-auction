@@ -19,6 +19,7 @@ const auth = getAuth(app);
 let currentUser = null;
 let currentRole = null;
 let globalCategories = [];
+let timerInterval = null;
 
 // --- LOGIN ---
 export async function loginUser() {
@@ -27,33 +28,22 @@ export async function loginUser() {
     try { await signInWithEmailAndPassword(auth, e, p); window.location.href = "admin.html"; } catch(err) { alert("Login Error"); }
 }
 
-// --- STEP 1: LEAGUE ---
+// --- SETUP FUNCTIONS ---
 export async function saveLeague() {
     const n = document.getElementById('league-name').value;
     const l = document.getElementById('league-logo').value;
-    if(!n) return alert("Enter Name");
     await setDoc(doc(db, "settings", "leagueInfo"), { leagueName: n, leagueLogo: l });
-    
-    // UI Transitions
     document.getElementById('league-inputs').classList.add('hidden');
     document.getElementById('league-saved-msg').classList.remove('hidden');
     document.getElementById('team-section').classList.remove('hidden');
 }
 
-// --- STEP 2: TEAMS ---
 export async function addTeam() {
-    const name = document.getElementById('team-name').value;
-    const short = document.getElementById('team-short').value;
-    if(!name || !short) return alert("Fill Name and Short Form");
-    
-    await addDoc(collection(db, "teams"), { teamName: name, teamShort: short });
-    
-    // Clear Inputs
-    document.getElementById('team-name').value = "";
-    document.getElementById('team-short').value = "";
+    const n = document.getElementById('team-name').value;
+    const s = document.getElementById('team-short').value;
+    await addDoc(collection(db, "teams"), { teamName: n, teamShort: s });
 }
 
-// --- STEP 3: RULES ---
 export async function saveRules() {
     const rules = { categories: [], purse: document.getElementById('purse-value').value };
     const names = document.getElementsByClassName('cat-name');
@@ -68,7 +58,6 @@ export async function saveRules() {
     syncRules();
 }
 
-// --- STEP 4: PLAYERS ---
 export async function addPlayer() {
     const pData = {
         name: document.getElementById('player-name').value,
@@ -77,7 +66,6 @@ export async function addPlayer() {
         role: document.getElementById('player-role').value,
         status: "unsold"
     };
-    if(!pData.name || !pData.category) return alert("Enter Name/Category");
     await addDoc(collection(db, "players"), pData);
     document.getElementById('player-name').value = "";
 }
@@ -88,26 +76,126 @@ export function updateBasePrice() {
     if(data) document.getElementById('player-base-price').value = data.basePrice;
 }
 
-// --- LISTENERS (Crucial for seeing data appear) ---
-if (document.getElementById('teams-display')) {
-    onSnapshot(collection(db, "teams"), (snap) => {
-        const display = document.getElementById('teams-display');
-        display.innerHTML = "";
-        snap.forEach(d => {
-            display.innerHTML += `<div class="team-pill"><strong>${d.data().teamShort}</strong></div>`;
-        });
+// --- AUCTION ENGINE ---
+export async function nextPlayer() {
+    const cat = document.getElementById('auction-category-select').value;
+    const q = query(collection(db, "players"), where("category", "==", cat), where("status", "==", "unsold"));
+    const snap = await getDocs(q);
+    if (snap.empty) return alert("Category Complete!");
+
+    const list = [];
+    snap.forEach(d => list.push({ id: d.id, ...d.data() }));
+    const p = list[Math.floor(Math.random() * list.length)];
+
+    // Set end time to 30 seconds from now
+    const endTime = Date.now() + 31000; 
+
+    await setDoc(doc(db, "settings", "activeAuction"), {
+        playerId: p.id, name: p.name, category: p.category, 
+        basePrice: Number(p.basePrice), currentBid: Number(p.basePrice),
+        highestBidder: "No Bids", highestBidderId: null, status: "active",
+        role: p.role, timerEnd: endTime
     });
 }
 
-if (document.getElementById('players-display')) {
-    onSnapshot(collection(db, "players"), (snap) => {
-        const display = document.getElementById('players-display');
-        display.innerHTML = "";
-        snap.forEach(d => {
-            display.innerHTML += `<div class="team-pill" style="border-left:4px solid var(--accent); text-align:left;">${d.data().name} (${d.data().category})</div>`;
-        });
+export async function bid() {
+    const ref = doc(db, "settings", "activeAuction");
+    const snap = await getDoc(ref);
+    const data = snap.data();
+    const catRule = globalCategories.find(c => c.name === data.category);
+    
+    await updateDoc(ref, {
+        currentBid: increment(Number(catRule.increment)),
+        highestBidder: currentUser.email,
+        highestBidderId: currentUser.uid,
+        timerEnd: null // STOP the timer once a bid is placed
     });
 }
+
+export async function sellPlayer() {
+    const snap = await getDoc(doc(db, "settings", "activeAuction"));
+    const data = snap.data();
+    await updateDoc(doc(db, "players", data.playerId), { status: "sold", soldTo: data.highestBidder, price: data.currentBid });
+    await updateDoc(doc(db, "settings", "activeAuction"), { status: "sold", timerEnd: null });
+}
+
+export async function unsoldPlayer() {
+    const snap = await getDoc(doc(db, "settings", "activeAuction"));
+    const data = snap.data();
+    await updateDoc(doc(db, "players", data.playerId), { status: "unsold_box" });
+    await updateDoc(doc(db, "settings", "activeAuction"), { status: "unsold", timerEnd: null });
+}
+
+// --- TIMER LOGIC ---
+function startLocalTimer(endTime) {
+    if(timerInterval) clearInterval(timerInterval);
+    const display = document.getElementById('timer-display');
+    
+    timerInterval = setInterval(() => {
+        const now = Date.now();
+        const distance = endTime - now;
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        if (distance < 0) {
+            clearInterval(timerInterval);
+            display.innerText = "0s";
+            if(currentRole === 'admin') autoUnsold();
+        } else {
+            display.innerText = seconds + "s";
+            display.style.color = seconds <= 5 ? "var(--danger)" : "var(--success)";
+        }
+    }, 1000);
+}
+
+async function autoUnsold() {
+    const snap = await getDoc(doc(db, "settings", "activeAuction"));
+    if(snap.data().highestBidderId === null && snap.data().status === 'active') {
+        unsoldPlayer();
+    }
+}
+
+// --- LIVE LISTENERS ---
+if (document.getElementById('display-p-name')) {
+    onSnapshot(doc(db, "settings", "activeAuction"), (d) => {
+        const data = d.data();
+        if(!data) return;
+        
+        document.getElementById('display-p-name').innerText = data.name;
+        document.getElementById('display-p-base').innerText = "$" + data.basePrice;
+        document.getElementById('display-p-current-bid').innerText = "$" + data.currentBid;
+        document.getElementById('display-p-bidder').innerText = data.highestBidder;
+        document.getElementById('display-p-cat').innerText = data.category;
+        document.getElementById('display-p-role').innerText = data.role;
+        
+        const badge = document.getElementById('player-status-badge');
+        badge.innerText = data.status.toUpperCase();
+        badge.style.background = data.status === 'sold' ? 'var(--success)' : (data.status === 'unsold' ? 'var(--danger)' : 'var(--accent)');
+
+        // Handle Timer UI
+        const display = document.getElementById('timer-display');
+        if (data.timerEnd && data.status === 'active') {
+            startLocalTimer(data.timerEnd);
+        } else {
+            if(timerInterval) clearInterval(timerInterval);
+            display.innerText = "PAUSED";
+            display.style.color = "var(--text-muted)";
+        }
+    });
+}
+
+// (Auth and syncRules functions stay at bottom)
+onAuthStateChanged(auth, async (user) => {
+    if (user) {
+        currentUser = user;
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        currentRole = userDoc.data().role;
+        const adminControls = document.getElementById('admin-controls');
+        const teamControls = document.getElementById('team-controls');
+        if (adminControls && currentRole !== 'admin') adminControls.classList.add('hidden');
+        if (teamControls && currentRole === 'admin') teamControls.classList.add('hidden');
+        syncRules();
+    }
+});
 
 async function syncRules() {
     const snap = await getDoc(doc(db, "settings", "auctionRules"));
@@ -126,62 +214,12 @@ async function syncRules() {
     }
 }
 
-// --- AUTH ---
-onAuthStateChanged(auth, async (user) => {
-    if (user) {
-        currentUser = user;
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        currentRole = userDoc.data().role;
-        const adminControls = document.getElementById('admin-controls');
-        const teamControls = document.getElementById('team-controls');
-        if (adminControls && currentRole !== 'admin') adminControls.classList.add('hidden');
-        if (teamControls && currentRole === 'admin') teamControls.classList.add('hidden');
-        syncRules();
-    }
-});
-
-// --- AUCTION ENGINE (STAYS SAME) ---
-export async function nextPlayer() {
-    const cat = document.getElementById('auction-category-select').value;
-    const q = query(collection(db, "players"), where("category", "==", cat), where("status", "==", "unsold"));
-    const snap = await getDocs(q);
-    if (snap.empty) return alert("Category Complete!");
-    const list = [];
-    snap.forEach(d => list.push({ id: d.id, ...d.data() }));
-    const p = list[Math.floor(Math.random() * list.length)];
-    await setDoc(doc(db, "settings", "activeAuction"), { playerId: p.id, name: p.name, category: p.category, basePrice: Number(p.basePrice), currentBid: Number(p.basePrice), highestBidder: "No Bids", highestBidderId: null, status: "active", role: p.role });
-}
-export async function bid() {
-    const ref = doc(db, "settings", "activeAuction");
-    const snap = await getDoc(ref);
-    const data = snap.data();
-    const catRule = globalCategories.find(c => c.name === data.category);
-    await updateDoc(ref, { currentBid: increment(Number(catRule.increment)), highestBidder: currentUser.email, highestBidderId: currentUser.uid });
-}
-export async function sellPlayer() {
-    const snap = await getDoc(doc(db, "settings", "activeAuction"));
-    const data = snap.data();
-    await updateDoc(doc(db, "players", data.playerId), { status: "sold", soldTo: data.highestBidder, price: data.currentBid });
-    await updateDoc(doc(db, "settings", "activeAuction"), { status: "sold" });
-}
-export async function unsoldPlayer() {
-    const snap = await getDoc(doc(db, "settings", "activeAuction"));
-    const data = snap.data();
-    await updateDoc(doc(db, "players", data.playerId), { status: "unsold_box" });
-    await updateDoc(doc(db, "settings", "activeAuction"), { status: "unsold" });
-}
-if (document.getElementById('display-p-name')) {
-    onSnapshot(doc(db, "settings", "activeAuction"), (d) => {
-        const data = d.data(); if(!data) return;
-        document.getElementById('display-p-name').innerText = data.name;
-        document.getElementById('display-p-base').innerText = "$" + data.basePrice;
-        document.getElementById('display-p-current-bid').innerText = "$" + data.currentBid;
-        document.getElementById('display-p-bidder').innerText = data.highestBidder;
-        document.getElementById('display-p-cat').innerText = data.category;
-        document.getElementById('display-p-role').innerText = data.role;
-        const b = document.getElementById('player-status-badge');
-        b.innerText = data.status.toUpperCase();
-        b.style.background = data.status === 'sold' ? 'var(--success)' : (data.status === 'unsold' ? 'var(--danger)' : 'var(--accent)');
+if (document.getElementById('teams-display')) {
+    onSnapshot(collection(db, "teams"), (snap) => {
+        const display = document.getElementById('teams-display');
+        display.innerHTML = "";
+        snap.forEach(d => display.innerHTML += `<div class="team-pill"><strong>${d.data().teamShort}</strong></div>`);
     });
 }
+
 export function logout() { signOut(auth).then(() => window.location.href = "index.html"); }
