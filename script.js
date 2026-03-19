@@ -2,7 +2,16 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getFirestore, doc, getDoc, setDoc, collection, addDoc, onSnapshot, query, where, getDocs, updateDoc, increment, deleteDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-const firebaseConfig = { apiKey: "AIzaSyCF5fo4zu4G7qD_wllxSy5cJPp1BTMCPog", authDomain: "cricketauction-dac71.firebaseapp.com", projectId: "cricketauction-dac71", storageBucket: "cricketauction-dac71.firebasestorage.app", messagingSenderId: "767785113298", appId: "1:767785113298:web:bb87d9d2ea845a2a95bf0b", measurementId: "G-GNP2EJ5G6Q" };
+const firebaseConfig = {
+  apiKey: "AIzaSyCF5fo4zu4G7qD_wllxSy5cJPp1BTMCPog",
+  authDomain: "cricketauction-dac71.firebaseapp.com",
+  projectId: "cricketauction-dac71",
+  storageBucket: "cricketauction-dac71.firebasestorage.app",
+  messagingSenderId: "767785113298",
+  appId: "1:767785113298:web:bb87d9d2ea845a2a95bf0b",
+  measurementId: "G-GNP2EJ5G6Q"
+};
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
@@ -46,7 +55,6 @@ function syncSquadTracker() {
     const globalList = document.getElementById('global-sold-list');
     const mySquadList = document.getElementById('my-squad-list');
 
-    // Listener for ALL Sold Players
     const qSold = query(collection(db, "players"), where("status", "==", "sold"));
     onSnapshot(qSold, (snap) => {
         if(globalList) globalList.innerHTML = "";
@@ -54,19 +62,15 @@ function syncSquadTracker() {
 
         snap.forEach(d => {
             const p = d.data();
-            
-            // 1. Add to Global List
             if(globalList) {
                 globalList.innerHTML += `
                     <tr>
                         <td><b>${p.name}</b></td>
-                        <td>${p.soldToName || 'Team'}</td>
+                        <td>${p.soldToName || '---'}</td>
                         <td style="color:var(--success); font-weight:700;">$${p.price}</td>
                     </tr>
                 `;
             }
-
-            // 2. Add to "My Squad" if the ID matches
             if(mySquadList && p.soldToId === currentTeamId) {
                 mySquadList.innerHTML += `
                     <tr>
@@ -80,7 +84,7 @@ function syncSquadTracker() {
     });
 }
 
-// --- SETUP FLOW ---
+// --- SETUP FUNCTIONS ---
 export async function loginUser() {
     const e = document.getElementById('email').value, p = document.getElementById('password').value;
     try { const res = await signInWithEmailAndPassword(auth, e, p); const uDoc = await getDoc(doc(db, "users", res.user.uid)); if(uDoc.data().role === 'admin') window.location.href="admin.html"; else window.location.href="auction.html"; } catch(err) { alert(err.message); }
@@ -104,12 +108,22 @@ export async function saveRules() {
     for(let i=0; i<3; i++) { if(bases[i].value) rules.categories.push({ name: names[i], basePrice: bases[i].value, increment: incs[i].value }); }
     await setDoc(doc(db, "settings", "auctionRules"), rules);
     const ts = await getDocs(collection(db, "teams")); ts.forEach(async (t) => { await updateDoc(doc(db, "teams", t.id), { purseBalance: Number(rules.purse) }); });
-    alert("Rules Saved!"); document.getElementById('player-section').classList.remove('hidden'); syncRules();
+    alert("Saved!"); document.getElementById('player-section').classList.remove('hidden'); syncRules();
 }
 
 export async function addPlayer() {
-    const pData = { name: document.getElementById('player-name').value, category: document.getElementById('player-category').value, basePrice: document.getElementById('player-base-price').value, role: document.getElementById('player-role').value, status: "unsold" };
-    await addDoc(collection(db, "players"), pData); document.getElementById('player-name').value = "";
+    const pData = { 
+        name: document.getElementById('player-name').value, 
+        category: document.getElementById('player-category').value, 
+        basePrice: document.getElementById('player-base-price').value, 
+        role: document.getElementById('player-role').value, 
+        photo: document.getElementById('player-photo').value,
+        status: "unsold" 
+    };
+    if(!pData.name) return alert("Enter Name");
+    await addDoc(collection(db, "players"), pData); 
+    document.getElementById('player-name').value = "";
+    document.getElementById('player-photo').value = "";
 }
 
 export function updateBasePrice() {
@@ -136,7 +150,12 @@ export async function nextPlayer() {
     const list = []; snap.forEach(d => list.push({ id: d.id, ...d.data() }));
     const p = list[Math.floor(Math.random() * list.length)];
     const endTime = Date.now() + 31000;
-    await setDoc(doc(db, "settings", "activeAuction"), { playerId: p.id, name: p.name, category: p.category, basePrice: Number(p.basePrice), currentBid: Number(p.basePrice), highestBidder: "No Bids", highestBidderId: null, highestBidderTeamId: null, status: "active", role: p.role, timerEnd: endTime });
+    await setDoc(doc(db, "settings", "activeAuction"), { 
+        playerId: p.id, name: p.name, category: p.category, 
+        basePrice: Number(p.basePrice), currentBid: Number(p.basePrice), 
+        highestBidder: "No Bids", highestBidderId: null, highestBidderTeamId: null, 
+        status: "active", role: p.role, photo: p.photo || "", timerEnd: endTime 
+    });
 }
 
 export async function bid() {
@@ -150,7 +169,14 @@ export async function bid() {
 
 export async function sellPlayer() {
     const snap = await getDoc(doc(db, "settings", "activeAuction")); const data = snap.data(); if(!data.highestBidderTeamId) return alert("No bids!");
-    await updateDoc(doc(db, "players", data.playerId), { status: "sold", soldToId: data.highestBidderTeamId, soldToName: data.highestBidder, price: data.currentBid, role: data.role, category: data.category });
+    await updateDoc(doc(db, "players", data.playerId), { 
+        status: "sold", 
+        soldToId: data.highestBidderTeamId, 
+        soldToName: data.highestBidder, // This is teamShort set in bid()
+        price: data.currentBid, 
+        role: data.role, 
+        category: data.category 
+    });
     await updateDoc(doc(db, "teams", data.highestBidderTeamId), { purseBalance: increment(-data.currentBid) });
     await updateDoc(doc(db, "settings", "activeAuction"), { status: "sold", timerEnd: 0 });
 }
@@ -161,7 +187,6 @@ export async function unsoldPlayer() {
     await updateDoc(doc(db, "settings", "activeAuction"), { status: "unsold", timerEnd: 0 });
 }
 
-// --- SYNC HELPERS ---
 async function syncRules() {
     const snap = await getDoc(doc(db, "settings", "auctionRules"));
     if (snap.exists()) {
@@ -190,8 +215,18 @@ if (document.getElementById('players-display')) {
 if (document.getElementById('display-p-name')) {
     onSnapshot(doc(db, "settings", "activeAuction"), (d) => {
         const data = d.data(); if(!data) return;
-        document.getElementById('display-p-name').innerText = data.name; document.getElementById('display-p-base').innerText = "$" + data.basePrice; document.getElementById('display-p-current-bid').innerText = "$" + data.currentBid; document.getElementById('display-p-bidder').innerText = data.highestBidder; document.getElementById('display-p-cat').innerText = data.category; document.getElementById('display-p-role').innerText = data.role;
-        const b = document.getElementById('player-status-badge'); b.innerText = data.status.toUpperCase(); b.style.background = data.status === 'sold' ? 'var(--success)' : (data.status === 'unsold' ? 'var(--danger)' : 'var(--accent)');
+        document.getElementById('display-p-name').innerText = data.name; 
+        document.getElementById('display-p-base').innerText = "$" + data.basePrice; 
+        document.getElementById('display-p-current-bid').innerText = "$" + data.currentBid; 
+        document.getElementById('display-p-bidder').innerText = data.highestBidder; 
+        document.getElementById('display-p-cat').innerText = data.category; 
+        document.getElementById('display-p-role').innerText = data.role;
+        document.getElementById('display-p-img').src = data.photo || "https://via.placeholder.com/300";
+        
+        const b = document.getElementById('player-status-badge'); 
+        b.innerText = data.status.toUpperCase(); 
+        b.style.background = data.status === 'sold' ? 'var(--success)' : (data.status === 'unsold' ? 'var(--danger)' : 'var(--accent)');
+        
         const tDisp = document.getElementById('timer-display');
         if (data.timerEnd && data.timerEnd > 0 && data.status === 'active') {
              if(timerInterval) clearInterval(timerInterval);
