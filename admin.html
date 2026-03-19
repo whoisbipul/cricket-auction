@@ -13,25 +13,25 @@
             <button onclick="handleLogout()" style="background:var(--danger); color:white; padding:8px 16px; border-radius:10px; cursor:pointer;">Logout</button>
         </header>
 
-        <!-- STEP 1: LEAGUE SETUP -->
+        <!-- STEP 1: LEAGUE -->
         <section id="league-section" class="setup-card">
             <h2>Step 1: League Setup</h2>
             <div id="league-saved-msg" class="hidden"><div style="background:rgba(34,197,94,0.1); color:var(--success); padding:15px; border-radius:12px; margin-bottom:20px; text-align:center; font-weight:700;">✓ League Configured</div></div>
             <div id="league-inputs">
-                <div class="input-group"><label>League Name</label><input type="text" id="league-name" placeholder="e.g. Premier League"></div>
-                <div class="input-group"><label>League Logo URL</label><input type="text" id="league-logo" placeholder="Paste link here"></div>
+                <div class="input-group"><label>League Name</label><input type="text" id="league-name"></div>
+                <div class="input-group"><label>League Logo URL</label><input type="text" id="league-logo"></div>
                 <button class="btn-primary" onclick="saveLeagueSettings()">Confirm League Details</button>
             </div>
         </section>
 
-        <!-- STEP 2: TEAM SETUP -->
+        <!-- STEP 2: TEAMS -->
         <section id="team-section" class="setup-card hidden">
             <h2>Step 2: Participating Teams</h2>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
                 <div class="input-group"><label>Team Name</label><input type="text" id="team-name"></div>
                 <div class="input-group"><label>Short Form</label><input type="text" id="team-short"></div>
             </div>
-            <button class="btn-success" onclick="handleAddTeam()">+ Add Team to League</button>
+            <button class="btn-success" onclick="handleAddTeam()">+ Add Team</button>
             <div id="teams-display" class="team-grid"></div>
             <button class="btn-primary" style="margin-top:40px; background:#f59e0b;" id="go-to-rules-btn" onclick="showRulesSection()">Next: Define Auction Rules →</button>
         </section>
@@ -45,7 +45,7 @@
                 <div class="input-group"><label>Max Players</label><input type="number" id="max-players" value="15"></div>
             </div>
             <div id="category-inputs">
-                <label>Categories & Increments</label>
+                <label>Define Categories</label>
                 <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:10px;">
                     <input type="text" placeholder="Cat A" class="cat-name">
                     <input type="number" placeholder="Base $" class="cat-base">
@@ -64,22 +64,21 @@
                 <div class="input-group"><label>Base Price ($)</label><input type="number" id="player-base-price"></div>
                 <div class="input-group"><label>Role</label><select id="player-role"><option>Batsman</option><option>Bowler</option><option>All-Rounder</option><option>WK</option></select></div>
             </div>
-            <button class="btn-success" onclick="handleAddPlayer()">+ Add Player to Pool</button>
+            <button class="btn-success" onclick="handleAddPlayer()">+ Add Player</button>
             <div id="players-display" class="player-grid"></div>
             <button class="btn-primary" style="margin-top:40px; background:#f59e0b;" id="go-to-access-btn" onclick="showAccessSection()">Next: Create Team Logins →</button>
         </section>
 
         <!-- STEP 5: TEAM LOGINS -->
-        <section id="access-section" class="setup-card hidden" style="border: 2px solid var(--accent); background: #1a2230;">
-            <h2 style="color:var(--accent);">Step 5: Create Team Login Access</h2>
-            <p style="color:var(--text-muted); font-size:13px; margin-bottom:20px;">Create separate accounts for your friends.</p>
+        <section id="access-section" class="setup-card hidden" style="border: 2px solid var(--accent);">
+            <h2>Step 5: Create Team Logins</h2>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
                 <div class="input-group"><label>Select Team</label><select id="login-team-select"></select></div>
-                <div class="input-group"><label>Assign Password</label><input type="text" id="team-pass-setup" placeholder="e.g. team123"></div>
+                <div class="input-group"><label>Assign Password</label><input type="text" id="team-pass-setup"></div>
             </div>
-            <button class="btn-primary" onclick="handleCreateTeamLogin()">Create Account</button>
+            <button class="btn-primary" onclick="handleCreateTeamLogin()">Create Team Account</button>
             <hr style="border:0; border-top:1px solid #30363d; margin:30px 0;">
-            <button class="btn-primary" style="background:var(--danger);" onclick="window.location.href='auction.html'">Finalize & Launch Live Auction →</button>
+            <button class="btn-primary" style="background:var(--danger);" onclick="window.location.href='auction.html'">Finalize & Launch Auction →</button>
         </section>
     </div>
 
@@ -93,7 +92,6 @@
         window.updateBasePrice = updateBasePrice;
         window.handleCreateTeamLogin = createTeamUser;
         
-        // Navigation Functions
         window.showRulesSection = () => {
             document.getElementById('rules-section').classList.remove('hidden');
             document.getElementById('go-to-rules-btn').classList.add('hidden');
