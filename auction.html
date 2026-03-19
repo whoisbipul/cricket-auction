@@ -10,7 +10,10 @@
     <div class="auction-container">
         <header>
             <h1 id="live-league-name">AUCTION<span>LIVE</span></h1>
-            <div id="timer-display" style="font-size:3rem; font-weight:900; color:var(--danger);">30s</div>
+            <div id="timer-box">
+                <span id="timer-label">TIME TO BID:</span>
+                <div id="timer-display">30s</div>
+            </div>
         </header>
 
         <div class="auction-main-grid">
@@ -32,15 +35,15 @@
 
                 <div id="admin-controls">
                     <select id="auction-category-select" style="margin-bottom:15px;"></select>
-                    <button class="btn-primary" onclick="startNextPlayer()">GET NEXT PLAYER</button>
+                    <button class="btn-primary" id="next-p-btn" onclick="startNextPlayer()">GET NEXT PLAYER</button>
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
                         <button class="btn-success" onclick="handleSellPlayer()">SOLD</button>
-                        <button style="background:var(--danger); color:white;" onclick="handleUnsoldPlayer()">UNSOLD</button>
+                        <button style="background:var(--danger); color:white; border-radius:14px; cursor:pointer;" onclick="handleUnsoldPlayer()">UNSOLD</button>
                     </div>
                 </div>
 
                 <div id="team-controls">
-                    <button class="btn-bid" onclick="placeBid()">BID NOW</button>
+                    <button id="bid-btn" class="btn-bid" onclick="placeBid()">BID NOW</button>
                 </div>
             </div>
         </div>
