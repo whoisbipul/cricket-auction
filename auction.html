@@ -9,15 +9,18 @@
 <body>
     <div class="auction-container">
         <header>
-            <h1 id="live-league-name">AUCTION<span>LIVE</span></h1>
+            <div style="display:flex; align-items:center; gap:15px;">
+                <img id="header-league-logo" src="" style="height:50px; display:none; border-radius:8px;">
+                <h1 id="live-league-name">AUCTION<span>LIVE</span></h1>
+            </div>
             <div id="timer-box" style="text-align:right;">
                 <span style="font-size:10px; font-weight:800; color:var(--text-muted);">TIME TO BID</span>
                 <div id="timer-display" style="font-size:3rem; font-weight:900; color:var(--danger);">30s</div>
             </div>
         </header>
 
-        <!-- MAIN AUCTION GRID -->
         <div class="auction-main-grid">
+            <!-- LEFT: PLAYER STAGE -->
             <div class="player-stage-card">
                 <div id="player-status-badge" class="status-badge status-active">ACTIVE</div>
                 <img id="display-p-img" src="https://via.placeholder.com/300" alt="Player">
@@ -27,6 +30,7 @@
                 </div>
             </div>
 
+            <!-- RIGHT: BIDDING -->
             <div class="bidding-side">
                 <div class="bidding-card">
                     <div class="bid-stat"><label>Base Price</label><h3 id="display-p-base">$0</h3></div>
@@ -43,16 +47,19 @@
                     </div>
 
                     <div id="team-controls">
-                        <button class="btn-bid" style="background:var(--accent); width:100%; font-size:1.8rem; padding:20px; border-radius:18px;" onclick="placeBid()">BID NOW</button>
+                        <button id="bid-btn-ui" class="btn-bid" style="background:var(--accent); width:100%; font-size:1.8rem; padding:20px; border-radius:18px;" onclick="placeBid()">BID NOW</button>
                     </div>
                 </div>
 
-                <!-- TEAM PURSE DISPLAY -->
+                <!-- TEAM DASHBOARD -->
                 <div id="my-team-stats" class="setup-card hidden" style="margin-top:20px; padding:20px; border-color:var(--success); background: rgba(34, 197, 94, 0.05);">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <span style="font-size:10px; font-weight:800; color:var(--success);">TEAM:</span>
-                            <div id="my-team-name" style="font-weight:900; font-size:1.2rem; color:white;">---</div>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <img id="my-team-logo" src="" style="width:40px; height:40px; border-radius:50%; display:none; object-fit:cover;">
+                            <div>
+                                <span style="font-size:10px; font-weight:800; color:var(--success);">TEAM:</span>
+                                <div id="my-team-name" style="font-weight:900; font-size:1.2rem; color:white;">---</div>
+                            </div>
                         </div>
                         <div style="text-align:right;">
                             <span style="font-size:10px; font-weight:800; color:var(--success);">REMAINING PURSE:</span>
@@ -63,39 +70,20 @@
             </div>
         </div>
 
-        <!-- SQUAD TRACKER SECTION -->
+        <!-- TRACKER SECTION -->
         <div class="auction-main-grid" style="margin-top:40px;">
-            <!-- GLOBAL SOLD LIST -->
             <div class="setup-card" style="padding:25px;">
-                <h3 style="font-size:14px; color:var(--accent); margin-bottom:20px;">SQUAD TRACKER (ALL SOLD PLAYERS)</h3>
+                <h3 style="font-size:14px; color:var(--accent); margin-bottom:20px;">SQUAD TRACKER (ALL SOLD)</h3>
                 <table class="auction-table">
-                    <thead>
-                        <tr>
-                            <th>Player</th>
-                            <th>Bought By</th>
-                            <th>Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody id="global-sold-list">
-                        <!-- Filled by JS -->
-                    </tbody>
+                    <thead><tr><th>Player</th><th>Bought By</th><th>Amount</th></tr></thead>
+                    <tbody id="global-sold-list"></tbody>
                 </table>
             </div>
-
-            <!-- PERSONAL SQUAD LIST (Visible only to teams) -->
             <div id="personal-squad-section" class="setup-card hidden" style="padding:25px; border-color:var(--accent);">
                 <h3 style="font-size:14px; color:var(--accent); margin-bottom:20px;">MY SQUAD</h3>
                 <table class="auction-table">
-                    <thead>
-                        <tr>
-                            <th>Player</th>
-                            <th>Role/Cat</th>
-                            <th>Price</th>
-                        </tr>
-                    </thead>
-                    <tbody id="my-squad-list">
-                        <!-- Filled by JS -->
-                    </tbody>
+                    <thead><tr><th>Player</th><th>Role/Cat</th><th>Price</th></tr></thead>
+                    <tbody id="my-squad-list"></tbody>
                 </table>
             </div>
         </div>
