@@ -17,6 +17,7 @@
         </header>
 
         <div class="auction-main-grid">
+            <!-- LEFT: PLAYER STAGE -->
             <div class="player-stage-card">
                 <div id="player-status-badge" class="status-badge status-active">ACTIVE</div>
                 <img id="display-p-img" src="https://via.placeholder.com/300" alt="Player">
@@ -26,22 +27,34 @@
                 </div>
             </div>
 
-            <div class="bidding-card">
-                <div class="bid-stat"><label>Base Price</label><h3 id="display-p-base">$0</h3></div>
-                <div class="bid-stat high-bid"><label>Current Bid</label><h3 id="display-p-current-bid">$0</h3></div>
-                <div class="bid-stat"><label>Highest Bidder</label><h4 id="display-p-bidder">None</h4></div>
+            <!-- RIGHT: BIDDING & MY TEAM STATS -->
+            <div class="bidding-side">
+                <div class="bidding-card">
+                    <div class="bid-stat"><label>Base Price</label><h3 id="display-p-base">$0</h3></div>
+                    <div class="bid-stat high-bid"><label>Current Bid</label><h3 id="display-p-current-bid">$0</h3></div>
+                    <div class="bid-stat"><label>Highest Bidder</label><h4 id="display-p-bidder">None</h4></div>
 
-                <div id="admin-controls">
-                    <select id="auction-category-select" style="margin-bottom:15px;"></select>
-                    <button class="btn-primary" onclick="startNextPlayer()">GET NEXT PLAYER</button>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
-                        <button class="btn-success" onclick="handleSellPlayer()">SOLD</button>
-                        <button style="background:var(--danger); color:white; border-radius:14px; cursor:pointer;" onclick="handleUnsoldPlayer()">UNSOLD</button>
+                    <div id="admin-controls">
+                        <select id="auction-category-select" style="margin-bottom:15px;"></select>
+                        <button class="btn-primary" onclick="startNextPlayer()">GET NEXT PLAYER</button>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
+                            <button class="btn-success" onclick="handleSellPlayer()">SOLD</button>
+                            <button style="background:var(--danger); color:white; border-radius:14px; cursor:pointer;" onclick="handleUnsoldPlayer()">UNSOLD</button>
+                        </div>
+                    </div>
+
+                    <div id="team-controls">
+                        <button class="btn-bid" style="background:var(--accent); width:100%; font-size:1.8rem; padding:20px; border-radius:18px;" onclick="placeBid()">BID NOW</button>
                     </div>
                 </div>
 
-                <div id="team-controls">
-                    <button class="btn-bid" style="background:var(--accent); width:100%; font-size:1.8rem; padding:20px; border-radius:18px;" onclick="placeBid()">BID NOW</button>
+                <!-- NEW: TEAM DASHBOARD (Visible only to Teams) -->
+                <div id="my-team-stats" class="setup-card hidden" style="margin-top:20px; padding:20px; border-color:var(--success);">
+                    <h3 style="font-size:12px; color:var(--success); margin-bottom:10px;">MY TEAM DASHBOARD</h3>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span id="my-team-name" style="font-weight:800; color:white;">---</span>
+                        <span id="my-team-purse" style="font-size:1.2rem; font-weight:900; color:var(--success);">$0</span>
+                    </div>
                 </div>
             </div>
         </div>
