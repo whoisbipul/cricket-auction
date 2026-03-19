@@ -2,7 +2,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getFirestore, doc, getDoc, setDoc, collection, addDoc, onSnapshot, query, where, getDocs, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// --- YOUR FIREBASE CONFIG ---
 const firebaseConfig = {
   apiKey: "AIzaSyCF5fo4zu4G7qD_wllxSy5cJPp1BTMCPog",
   authDomain: "cricketauction-dac71.firebaseapp.com",
@@ -23,7 +22,7 @@ let currentTeamId = null;
 let globalCategories = [];
 let timerInterval = null;
 
-// --- LOGIN LOGIC ---
+// --- LOGIN ---
 export async function loginUser() {
     const e = document.getElementById('email').value;
     const p = document.getElementById('password').value;
@@ -35,10 +34,11 @@ export async function loginUser() {
     } catch(err) { alert("Error: " + err.message); }
 }
 
-// --- STEP 1 & 2 ---
+// --- SETUP FLOW ---
 export async function saveLeague() {
     const n = document.getElementById('league-name').value;
     const l = document.getElementById('league-logo').value;
+    if(!n) return alert("Enter League Name");
     await setDoc(doc(db, "settings", "leagueInfo"), { leagueName: n, leagueLogo: l });
     document.getElementById('league-inputs').classList.add('hidden');
     document.getElementById('league-saved-msg').classList.remove('hidden');
@@ -48,12 +48,11 @@ export async function saveLeague() {
 export async function addTeam() {
     const n = document.getElementById('team-name').value;
     const s = document.getElementById('team-short').value;
-    if(!n || !short) return alert("Fill all fields");
-    await addDoc(collection(db, "teams"), { teamName: n, teamShort: s, purseBalance: 0, playersBought: [] });
+    if(!n || !s) return alert("Fill Name and Short Form");
+    await addDoc(collection(db, "teams"), { teamName: n, teamShort: s, purseBalance: 0 });
     document.getElementById('team-name').value = ""; document.getElementById('team-short').value = "";
 }
 
-// --- STEP 3: RULES ---
 export async function saveRules() {
     const rules = { categories: [], purse: document.getElementById('purse-value').value };
     const names = document.getElementsByClassName('cat-name');
@@ -64,18 +63,15 @@ export async function saveRules() {
     }
     await setDoc(doc(db, "settings", "auctionRules"), rules);
     
-    // Update all existing teams with the new purse value
+    // Update team purses
     const teamsSnap = await getDocs(collection(db, "teams"));
-    teamsSnap.forEach(async (tDoc) => {
-        await updateDoc(doc(db, "teams", tDoc.id), { purseBalance: Number(rules.purse) });
-    });
+    teamsSnap.forEach(async (t) => { await updateDoc(doc(db, "teams", t.id), { purseBalance: Number(rules.purse) }); });
 
-    alert("Rules Saved! Teams purses updated to $" + rules.purse);
+    alert("Rules Saved!");
     document.getElementById('player-section').classList.remove('hidden');
     syncRules();
 }
 
-// --- STEP 4: PLAYERS ---
 export async function addPlayer() {
     const pData = {
         name: document.getElementById('player-name').value,
@@ -84,6 +80,7 @@ export async function addPlayer() {
         role: document.getElementById('player-role').value,
         status: "unsold"
     };
+    if(!pData.name) return alert("Enter Player Name");
     await addDoc(collection(db, "players"), pData);
     document.getElementById('player-name').value = "";
 }
@@ -94,26 +91,20 @@ export function updateBasePrice() {
     if(data) document.getElementById('player-base-price').value = data.basePrice;
 }
 
-// --- STEP 5: TEAM LOGINS ---
+// --- TEAM LOGINS ---
 export async function createTeamUser() {
     const teamId = document.getElementById('login-team-select').value;
-    const password = document.getElementById('team-pass-setup').value;
-    const teamFullText = document.getElementById('login-team-select').options[document.getElementById('login-team-select').selectedIndex].text;
-    
-    if(!teamId || !password) return alert("Select Team and Set Password");
+    const pass = document.getElementById('team-pass-setup').value;
+    const teamText = document.getElementById('login-team-select').options[document.getElementById('login-team-select').selectedIndex].text;
+    if(!teamId || !pass) return alert("Select Team & Password");
 
-    // Generates email like "mi@auction.com"
-    const email = teamFullText.split(" - ")[0].toLowerCase().trim() + "@auction.com";
+    const email = teamText.split(" - ")[0].toLowerCase().trim() + "@auction.com";
 
     try {
-        const res = await createUserWithEmailAndPassword(auth, email, password);
-        await setDoc(doc(db, "users", res.user.uid), {
-            role: "team",
-            teamId: teamId,
-            email: email
-        });
-        alert(`SUCCESS!\nTeam: ${teamFullText}\nLogin Email: ${email}\nPassword: ${password}\n\nNote: You are now being logged out. Log back in as Admin.`);
-        logout();
+        const res = await createUserWithEmailAndPassword(auth, email, pass);
+        await setDoc(doc(db, "users", res.user.uid), { role: "team", teamId: teamId, email: email });
+        alert(`Account Created! Email: ${email}`);
+        logout(); // Must log back in as admin
     } catch(e) { alert(e.message); }
 }
 
@@ -142,7 +133,6 @@ export async function bid() {
     const data = snap.data();
     if(data.status !== 'active') return;
 
-    // Get current team data
     const teamSnap = await getDoc(doc(db, "teams", currentTeamId));
     const teamData = teamSnap.data();
     const catRule = globalCategories.find(c => c.name === data.category);
@@ -151,11 +141,7 @@ export async function bid() {
     if(teamData.purseBalance < bidAmount) return alert("Insufficient Funds!");
 
     await updateDoc(ref, {
-        currentBid: bidAmount,
-        highestBidder: teamData.teamShort,
-        highestBidderId: currentUser.uid,
-        highestBidderTeamId: currentTeamId,
-        timerEnd: 0 
+        currentBid: bidAmount, highestBidder: teamData.teamShort, highestBidderId: currentUser.uid, highestBidderTeamId: currentTeamId, timerEnd: 0 
     });
 }
 
@@ -163,7 +149,6 @@ export async function sellPlayer() {
     const snap = await getDoc(doc(db, "settings", "activeAuction"));
     const data = snap.data();
     if(!data.highestBidderTeamId) return alert("No bids!");
-
     await updateDoc(doc(db, "players", data.playerId), { status: "sold", soldToId: data.highestBidderTeamId, price: data.currentBid });
     await updateDoc(doc(db, "teams", data.highestBidderTeamId), { purseBalance: increment(-data.currentBid) });
     await updateDoc(doc(db, "settings", "activeAuction"), { status: "sold", timerEnd: 0 });
@@ -176,18 +161,17 @@ export async function unsoldPlayer() {
     await updateDoc(doc(db, "settings", "activeAuction"), { status: "unsold", timerEnd: 0 });
 }
 
-// --- LIVE SYNC & HELPERS ---
+// --- SYNC & LISTENERS ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         currentUser = user;
         const userDoc = await getDoc(doc(db, "users", user.uid));
         currentRole = userDoc.data().role;
         currentTeamId = userDoc.data().teamId || null;
-        
-        const adminControls = document.getElementById('admin-controls');
-        const teamControls = document.getElementById('team-controls');
-        if (adminControls && currentRole !== 'admin') adminControls.classList.add('hidden');
-        if (teamControls && currentRole === 'admin') teamControls.classList.add('hidden');
+        const ac = document.getElementById('admin-controls');
+        const tc = document.getElementById('team-controls');
+        if (ac && currentRole !== 'admin') ac.classList.add('hidden');
+        if (tc && currentRole === 'admin') tc.classList.add('hidden');
         syncRules();
     }
 });
@@ -235,7 +219,6 @@ if (document.getElementById('display-p-name')) {
         const b = document.getElementById('player-status-badge');
         b.innerText = data.status.toUpperCase();
         b.style.background = data.status === 'sold' ? 'var(--success)' : (data.status === 'unsold' ? 'var(--danger)' : 'var(--accent)');
-        
         const tDisp = document.getElementById('timer-display');
         if (data.timerEnd && data.timerEnd > 0 && data.status === 'active') {
              if(timerInterval) clearInterval(timerInterval);
