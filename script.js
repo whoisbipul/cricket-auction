@@ -2,6 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getFirestore, doc, getDoc, setDoc, collection, addDoc, onSnapshot, query, where, getDocs, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
+// --- YOUR FIREBASE CONFIG ---
 const firebaseConfig = {
   apiKey: "AIzaSyCF5fo4zu4G7qD_wllxSy5cJPp1BTMCPog",
   authDomain: "cricketauction-dac71.firebaseapp.com",
@@ -22,25 +23,19 @@ let currentTeamId = null;
 let globalCategories = [];
 let timerInterval = null;
 
-// --- LOGIN ---
+// --- LOGIN LOGIC ---
 export async function loginUser() {
     const e = document.getElementById('email').value;
     const p = document.getElementById('password').value;
     try { 
-        const userCredential = await signInWithEmailAndPassword(auth, e, p);
-        const user = userCredential.user;
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        const role = userDoc.data().role;
-        
-        if(role === 'admin') {
-            window.location.href = "admin.html";
-        } else {
-            window.location.href = "auction.html"; // Teams go straight to the stage
-        }
-    } catch(err) { alert("Login Error: " + err.message); }
+        const res = await signInWithEmailAndPassword(auth, e, p);
+        const userDoc = await getDoc(doc(db, "users", res.user.uid));
+        if(userDoc.data().role === 'admin') window.location.href = "admin.html";
+        else window.location.href = "auction.html";
+    } catch(err) { alert("Error: " + err.message); }
 }
 
-// --- ADMIN FUNCTIONS ---
+// --- STEP 1 & 2 ---
 export async function saveLeague() {
     const n = document.getElementById('league-name').value;
     const l = document.getElementById('league-logo').value;
@@ -53,44 +48,12 @@ export async function saveLeague() {
 export async function addTeam() {
     const n = document.getElementById('team-name').value;
     const s = document.getElementById('team-short').value;
-    const purse = (await getDoc(doc(db, "settings", "auctionRules"))).data()?.purse || 10000;
-    
-    await addDoc(collection(db, "teams"), { 
-        teamName: n, 
-        teamShort: s, 
-        purseBalance: Number(purse),
-        playersBought: []
-    });
+    if(!n || !short) return alert("Fill all fields");
+    await addDoc(collection(db, "teams"), { teamName: n, teamShort: s, purseBalance: 0, playersBought: [] });
+    document.getElementById('team-name').value = ""; document.getElementById('team-short').value = "";
 }
 
-// NEW: Create Team Login
-export async function createTeamUser() {
-    const teamId = document.getElementById('login-team-select').value;
-    const password = document.getElementById('team-pass-setup').value;
-    const teamName = document.getElementById('login-team-select').options[document.getElementById('login-team-select').selectedIndex].text;
-    
-    if(!teamId || !password) return alert("Select Team and Set Password");
-
-    // Email will be generated as teamshort@auction.com
-    const email = teamName.split(" - ")[0].toLowerCase() + "@auction.com";
-
-    try {
-        // This is a temporary way to create users. 
-        // Note: As an admin, you will be logged out after creating a user.
-        // You'll need to log back in as admin.
-        const res = await createUserWithEmailAndPassword(auth, email, password);
-        await setDoc(doc(db, "users", res.user.uid), {
-            role: "team",
-            teamId: teamId,
-            teamName: teamName,
-            email: email
-        });
-        alert(`Account Created!\nEmail: ${email}\nPassword: ${password}\n(You will be logged out now. Please log back in as Admin.)`);
-        logout();
-    } catch(e) { alert(e.message); }
-}
-
-// (SaveRules and AddPlayer stay same as before)
+// --- STEP 3: RULES ---
 export async function saveRules() {
     const rules = { categories: [], purse: document.getElementById('purse-value').value };
     const names = document.getElementsByClassName('cat-name');
@@ -100,11 +63,19 @@ export async function saveRules() {
         if(names[i].value) rules.categories.push({ name: names[i].value, basePrice: bases[i].value, increment: incs[i].value });
     }
     await setDoc(doc(db, "settings", "auctionRules"), rules);
-    alert("Rules Saved!");
+    
+    // Update all existing teams with the new purse value
+    const teamsSnap = await getDocs(collection(db, "teams"));
+    teamsSnap.forEach(async (tDoc) => {
+        await updateDoc(doc(db, "teams", tDoc.id), { purseBalance: Number(rules.purse) });
+    });
+
+    alert("Rules Saved! Teams purses updated to $" + rules.purse);
     document.getElementById('player-section').classList.remove('hidden');
     syncRules();
 }
 
+// --- STEP 4: PLAYERS ---
 export async function addPlayer() {
     const pData = {
         name: document.getElementById('player-name').value,
@@ -123,7 +94,30 @@ export function updateBasePrice() {
     if(data) document.getElementById('player-base-price').value = data.basePrice;
 }
 
-// --- AUCTION LOGIC ---
+// --- STEP 5: TEAM LOGINS ---
+export async function createTeamUser() {
+    const teamId = document.getElementById('login-team-select').value;
+    const password = document.getElementById('team-pass-setup').value;
+    const teamFullText = document.getElementById('login-team-select').options[document.getElementById('login-team-select').selectedIndex].text;
+    
+    if(!teamId || !password) return alert("Select Team and Set Password");
+
+    // Generates email like "mi@auction.com"
+    const email = teamFullText.split(" - ")[0].toLowerCase().trim() + "@auction.com";
+
+    try {
+        const res = await createUserWithEmailAndPassword(auth, email, password);
+        await setDoc(doc(db, "users", res.user.uid), {
+            role: "team",
+            teamId: teamId,
+            email: email
+        });
+        alert(`SUCCESS!\nTeam: ${teamFullText}\nLogin Email: ${email}\nPassword: ${password}\n\nNote: You are now being logged out. Log back in as Admin.`);
+        logout();
+    } catch(e) { alert(e.message); }
+}
+
+// --- AUCTION ENGINE ---
 export async function nextPlayer() {
     const cat = document.getElementById('auction-category-select').value;
     const q = query(collection(db, "players"), where("category", "==", cat), where("status", "==", "unsold"));
@@ -137,30 +131,28 @@ export async function nextPlayer() {
     await setDoc(doc(db, "settings", "activeAuction"), {
         playerId: p.id, name: p.name, category: p.category, 
         basePrice: Number(p.basePrice), currentBid: Number(p.basePrice),
-        highestBidder: "No Bids", highestBidderId: null, status: "active",
-        role: p.role, timerEnd: endTime, highestBidderTeamId: null
+        highestBidder: "No Bids", highestBidderId: null, highestBidderTeamId: null,
+        status: "active", role: p.role, timerEnd: endTime
     });
 }
 
 export async function bid() {
-    if(!currentTeamId && currentRole !== 'admin') return alert("Error: No Team ID");
-    
     const ref = doc(db, "settings", "activeAuction");
     const snap = await getDoc(ref);
     const data = snap.data();
     if(data.status !== 'active') return;
 
-    // Check Purse
+    // Get current team data
     const teamSnap = await getDoc(doc(db, "teams", currentTeamId));
     const teamData = teamSnap.data();
     const catRule = globalCategories.find(c => c.name === data.category);
-    const nextBidAmount = data.currentBid + Number(catRule.increment);
+    const bidAmount = data.highestBidderId ? data.currentBid + Number(catRule.increment) : data.basePrice;
 
-    if(teamData.purseBalance < nextBidAmount) return alert("Not enough money in Purse!");
+    if(teamData.purseBalance < bidAmount) return alert("Insufficient Funds!");
 
     await updateDoc(ref, {
-        currentBid: increment(Number(catRule.increment)),
-        highestBidder: teamData.teamShort, // Show the Team Name
+        currentBid: bidAmount,
+        highestBidder: teamData.teamShort,
         highestBidderId: currentUser.uid,
         highestBidderTeamId: currentTeamId,
         timerEnd: 0 
@@ -172,18 +164,8 @@ export async function sellPlayer() {
     const data = snap.data();
     if(!data.highestBidderTeamId) return alert("No bids!");
 
-    // 1. Mark player as sold
-    await updateDoc(doc(db, "players", data.playerId), { 
-        status: "sold", 
-        soldToId: data.highestBidderTeamId, 
-        price: data.currentBid 
-    });
-
-    // 2. Deduct from team purse
-    await updateDoc(doc(db, "teams", data.highestBidderTeamId), {
-        purseBalance: increment(-data.currentBid)
-    });
-
+    await updateDoc(doc(db, "players", data.playerId), { status: "sold", soldToId: data.highestBidderTeamId, price: data.currentBid });
+    await updateDoc(doc(db, "teams", data.highestBidderTeamId), { purseBalance: increment(-data.currentBid) });
     await updateDoc(doc(db, "settings", "activeAuction"), { status: "sold", timerEnd: 0 });
 }
 
@@ -194,7 +176,7 @@ export async function unsoldPlayer() {
     await updateDoc(doc(db, "settings", "activeAuction"), { status: "unsold", timerEnd: 0 });
 }
 
-// --- SYNC & LISTENERS ---
+// --- LIVE SYNC & HELPERS ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         currentUser = user;
@@ -227,43 +209,18 @@ async function syncRules() {
     }
 }
 
-// Live Listeners for Grids
 if (document.getElementById('teams-display')) {
     onSnapshot(collection(db, "teams"), (snap) => {
         const display = document.getElementById('teams-display');
         const loginSelect = document.getElementById('login-team-select');
         if(display) display.innerHTML = "";
         if(loginSelect) loginSelect.innerHTML = '<option value="">Select Team</option>';
-        
         snap.forEach(d => {
             const team = d.data();
             if(display) display.innerHTML += `<div class="team-pill"><strong>${team.teamShort}</strong><br><small>$${team.purseBalance}</small></div>`;
             if(loginSelect) loginSelect.innerHTML += `<option value="${d.id}">${team.teamShort} - ${team.teamName}</option>`;
         });
     });
-}
-
-// (Local Timer and Live Sync for Auction stage stay same as previous message)
-function startLocalTimer(endTime) {
-    if(timerInterval) clearInterval(timerInterval);
-    const display = document.getElementById('timer-display');
-    timerInterval = setInterval(() => {
-        const now = Date.now();
-        const distance = endTime - now;
-        const seconds = Math.floor(distance / 1000);
-        if (distance <= 0) {
-            clearInterval(timerInterval);
-            display.innerText = "0s";
-            if(currentRole === 'admin') autoUnsoldCheck();
-        } else {
-            display.innerText = seconds + "s";
-        }
-    }, 1000);
-}
-
-async function autoUnsoldCheck() {
-    const snap = await getDoc(doc(db, "settings", "activeAuction"));
-    if(snap.data().highestBidderId === null && snap.data().status === 'active') unsoldPlayer();
 }
 
 if (document.getElementById('display-p-name')) {
@@ -278,9 +235,16 @@ if (document.getElementById('display-p-name')) {
         const b = document.getElementById('player-status-badge');
         b.innerText = data.status.toUpperCase();
         b.style.background = data.status === 'sold' ? 'var(--success)' : (data.status === 'unsold' ? 'var(--danger)' : 'var(--accent)');
+        
         const tDisp = document.getElementById('timer-display');
-        if (data.timerEnd && data.timerEnd > 0 && data.status === 'active') { startLocalTimer(data.timerEnd); }
-        else { if(timerInterval) clearInterval(timerInterval); tDisp.innerText = data.status === 'active' ? "BIDDING" : "PAUSED"; }
+        if (data.timerEnd && data.timerEnd > 0 && data.status === 'active') {
+             if(timerInterval) clearInterval(timerInterval);
+             timerInterval = setInterval(() => {
+                const dist = data.timerEnd - Date.now();
+                if(dist <= 0) { tDisp.innerText = "0s"; clearInterval(timerInterval); if(currentRole === 'admin' && data.highestBidderId === null) unsoldPlayer(); }
+                else tDisp.innerText = Math.floor(dist/1000) + "s";
+             }, 1000);
+        } else { if(timerInterval) clearInterval(timerInterval); tDisp.innerText = data.status === 'active' ? "BIDDING" : "PAUSED"; }
     });
 }
 
