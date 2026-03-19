@@ -10,14 +10,13 @@
     <div class="auction-container">
         <header>
             <h1 id="live-league-name">AUCTION<span>LIVE</span></h1>
-            <div id="timer-box">
-                <span id="timer-label">TIME TO BID:</span>
-                <div id="timer-display">30s</div>
+            <div id="timer-box" style="text-align:right;">
+                <span style="font-size:10px; font-weight:800; color:var(--text-muted);">TIME TO BID</span>
+                <div id="timer-display" style="font-size:3rem; font-weight:900; color:var(--danger);">30s</div>
             </div>
         </header>
 
         <div class="auction-main-grid">
-            <!-- LEFT: PLAYER -->
             <div class="player-stage-card">
                 <div id="player-status-badge" class="status-badge status-active">ACTIVE</div>
                 <img id="display-p-img" src="https://via.placeholder.com/300" alt="Player">
@@ -27,15 +26,14 @@
                 </div>
             </div>
 
-            <!-- RIGHT: BIDDING -->
             <div class="bidding-card">
                 <div class="bid-stat"><label>Base Price</label><h3 id="display-p-base">$0</h3></div>
                 <div class="bid-stat high-bid"><label>Current Bid</label><h3 id="display-p-current-bid">$0</h3></div>
-                <div class="bid-stat"><label>Highest Bidder</label><h4 id="display-p-bidder" style="color:var(--accent); font-size:1.2rem;">None</h4></div>
+                <div class="bid-stat"><label>Highest Bidder</label><h4 id="display-p-bidder">None</h4></div>
 
                 <div id="admin-controls">
                     <select id="auction-category-select" style="margin-bottom:15px;"></select>
-                    <button class="btn-primary" id="next-p-btn" onclick="startNextPlayer()">GET NEXT PLAYER</button>
+                    <button class="btn-primary" onclick="startNextPlayer()">GET NEXT PLAYER</button>
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
                         <button class="btn-success" onclick="handleSellPlayer()">SOLD</button>
                         <button style="background:var(--danger); color:white; border-radius:14px; cursor:pointer;" onclick="handleUnsoldPlayer()">UNSOLD</button>
@@ -43,7 +41,7 @@
                 </div>
 
                 <div id="team-controls">
-                    <button id="bid-btn" class="btn-bid" onclick="placeBid()">BID NOW</button>
+                    <button class="btn-bid" style="background:var(--accent); width:100%; font-size:1.8rem; padding:20px; border-radius:18px;" onclick="placeBid()">BID NOW</button>
                 </div>
             </div>
         </div>
@@ -51,10 +49,8 @@
 
     <script type="module">
         import { nextPlayer, sellPlayer, unsoldPlayer, bid } from './script.js';
-        window.startNextPlayer = nextPlayer;
-        window.handleSellPlayer = sellPlayer;
-        window.handleUnsoldPlayer = unsoldPlayer;
-        window.placeBid = bid;
+        window.startNextPlayer = nextPlayer; window.handleSellPlayer = sellPlayer;
+        window.handleUnsoldPlayer = unsoldPlayer; window.placeBid = bid;
     </script>
 </body>
 </html>
