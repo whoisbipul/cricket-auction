@@ -1,24 +1,24 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, collection, addDoc, onSnapshot, query, where, getDocs, updateDoc, increment, deleteDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, collection, addDoc, onSnapshot, query, where, getDocs, updateDoc, increment, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCF5fo4zu4G7qD_wllxSy5cJPp1BTMCPog",
-  authDomain: "cricketauction-dac71.firebaseapp.com",
-  projectId: "cricketauction-dac71",
-  storageBucket: "cricketauction-dac71.firebasestorage.app",
-  messagingSenderId: "767785113298",
-  appId: "1:767785113298:web:bb87d9d2ea845a2a95bf0b",
-  measurementId: "G-GNP2EJ5G6Q"
+const firebaseConfig = { 
+    apiKey: "AIzaSyCF5fo4zu4G7qD_wllxSy5cJPp1BTMCPog", 
+    authDomain: "cricketauction-dac71.firebaseapp.com", 
+    projectId: "cricketauction-dac71", 
+    storageBucket: "cricketauction-dac71.firebasestorage.app", 
+    messagingSenderId: "767785113298", 
+    appId: "1:767785113298:web:bb87d9d2ea845a2a95bf0b", 
+    measurementId: "G-GNP2EJ5G6Q" 
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-let currentUser = null, currentRole = null, currentTeamId = null, globalCategories = [], timerInterval = null;
+let currentUser = null, currentRole = null, currentTeamId = null, globalCategories = [], timerInterval = null, auctionRules = null;
 
-// --- AUTH & LISTENERS ---
+// --- AUTH & INITIALIZATION ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         currentUser = user;
@@ -31,13 +31,9 @@ onAuthStateChanged(auth, async (user) => {
             if (ac && currentRole !== 'admin') ac.classList.add('hidden');
             if (tc && currentRole === 'admin') tc.classList.add('hidden');
 
-            const teamStatsBox = document.getElementById('my-team-stats');
-            const personalSquadSection = document.getElementById('personal-squad-section');
-            
             if (currentRole === 'team' && currentTeamId) {
-                if(teamStatsBox) teamStatsBox.classList.remove('hidden');
-                if(personalSquadSection) personalSquadSection.classList.remove('hidden');
-                
+                document.getElementById('my-team-stats')?.classList.remove('hidden');
+                document.getElementById('personal-squad-section')?.classList.remove('hidden');
                 onSnapshot(doc(db, "teams", currentTeamId), (tDoc) => {
                     const tData = tDoc.data();
                     if(document.getElementById('my-team-name')) document.getElementById('my-team-name').innerText = tData.teamShort;
@@ -46,40 +42,29 @@ onAuthStateChanged(auth, async (user) => {
             }
             syncRules();
             syncSquadTracker();
+            loadLeagueBranding();
         }
     }
 });
 
-// --- SQUAD TRACKER LOGIC ---
+async function loadLeagueBranding() {
+    const snap = await getDoc(doc(db, "settings", "leagueInfo"));
+    if (snap.exists()) {
+        const data = snap.data();
+        const logoImg = document.getElementById('header-league-logo');
+        if(logoImg && data.leagueLogo) { logoImg.src = data.leagueLogo; logoImg.style.display = 'block'; }
+        if(document.getElementById('live-league-name')) document.getElementById('live-league-name').innerHTML = `${data.leagueName}<span>LIVE</span>`;
+    }
+}
+
 function syncSquadTracker() {
-    const globalList = document.getElementById('global-sold-list');
-    const mySquadList = document.getElementById('my-squad-list');
-
-    const qSold = query(collection(db, "players"), where("status", "==", "sold"));
-    onSnapshot(qSold, (snap) => {
-        if(globalList) globalList.innerHTML = "";
-        if(mySquadList) mySquadList.innerHTML = "";
-
+    const globalList = document.getElementById('global-sold-list'), mySquadList = document.getElementById('my-squad-list');
+    onSnapshot(query(collection(db, "players"), where("status", "==", "sold")), (snap) => {
+        if(globalList) globalList.innerHTML = ""; if(mySquadList) mySquadList.innerHTML = "";
         snap.forEach(d => {
             const p = d.data();
-            if(globalList) {
-                globalList.innerHTML += `
-                    <tr>
-                        <td><b>${p.name}</b></td>
-                        <td>${p.soldToName || '---'}</td>
-                        <td style="color:var(--success); font-weight:700;">$${p.price}</td>
-                    </tr>
-                `;
-            }
-            if(mySquadList && p.soldToId === currentTeamId) {
-                mySquadList.innerHTML += `
-                    <tr>
-                        <td><b>${p.name}</b></td>
-                        <td>${p.role} (${p.category})</td>
-                        <td style="color:var(--accent); font-weight:700;">$${p.price}</td>
-                    </tr>
-                `;
-            }
+            if(globalList) globalList.innerHTML += `<tr><td><b>${p.name}</b></td><td>${p.soldToName || '---'}</td><td style="color:var(--success); font-weight:700;">$${p.price}</td></tr>`;
+            if(mySquadList && p.soldToId === currentTeamId) mySquadList.innerHTML += `<tr><td><b>${p.name}</b></td><td>${p.role} (${p.category})</td><td style="color:var(--accent); font-weight:700;">$${p.price}</td></tr>`;
         });
     });
 }
@@ -102,9 +87,8 @@ export async function addTeam() {
 }
 
 export async function saveRules() {
-    const rules = { categories: [], purse: document.getElementById('purse-value').value };
-    const bases = document.getElementsByClassName('cat-base'), incs = document.getElementsByClassName('cat-inc');
-    const names = ["Category A", "Category B", "Category C"];
+    const rules = { categories: [], purse: document.getElementById('purse-value').value, maxPlayers: document.getElementById('max-players').value };
+    const bases = document.getElementsByClassName('cat-base'), incs = document.getElementsByClassName('cat-inc'), names = ["Category A", "Category B", "Category C"];
     for(let i=0; i<3; i++) { if(bases[i].value) rules.categories.push({ name: names[i], basePrice: bases[i].value, increment: incs[i].value }); }
     await setDoc(doc(db, "settings", "auctionRules"), rules);
     const ts = await getDocs(collection(db, "teams")); ts.forEach(async (t) => { await updateDoc(doc(db, "teams", t.id), { purseBalance: Number(rules.purse) }); });
@@ -112,18 +96,8 @@ export async function saveRules() {
 }
 
 export async function addPlayer() {
-    const pData = { 
-        name: document.getElementById('player-name').value, 
-        category: document.getElementById('player-category').value, 
-        basePrice: document.getElementById('player-base-price').value, 
-        role: document.getElementById('player-role').value, 
-        photo: document.getElementById('player-photo').value,
-        status: "unsold" 
-    };
-    if(!pData.name) return alert("Enter Name");
-    await addDoc(collection(db, "players"), pData); 
-    document.getElementById('player-name').value = "";
-    document.getElementById('player-photo').value = "";
+    const pData = { name: document.getElementById('player-name').value, category: document.getElementById('player-category').value, basePrice: document.getElementById('player-base-price').value, role: document.getElementById('player-role').value, photo: document.getElementById('player-photo').value, status: "unsold" };
+    await addDoc(collection(db, "players"), pData); document.getElementById('player-name').value = ""; document.getElementById('player-photo').value = "";
 }
 
 export function updateBasePrice() {
@@ -150,33 +124,54 @@ export async function nextPlayer() {
     const list = []; snap.forEach(d => list.push({ id: d.id, ...d.data() }));
     const p = list[Math.floor(Math.random() * list.length)];
     const endTime = Date.now() + 31000;
-    await setDoc(doc(db, "settings", "activeAuction"), { 
-        playerId: p.id, name: p.name, category: p.category, 
-        basePrice: Number(p.basePrice), currentBid: Number(p.basePrice), 
-        highestBidder: "No Bids", highestBidderId: null, highestBidderTeamId: null, 
-        status: "active", role: p.role, photo: p.photo || "", timerEnd: endTime 
-    });
+    await setDoc(doc(db, "settings", "activeAuction"), { playerId: p.id, name: p.name, category: p.category, basePrice: Number(p.basePrice), currentBid: Number(p.basePrice), highestBidder: "No Bids", highestBidderId: null, highestBidderTeamId: null, status: "active", role: p.role, photo: p.photo || "", timerEnd: endTime });
 }
 
 export async function bid() {
-    const ref = doc(db, "settings", "activeAuction"); const snap = await getDoc(ref); const data = snap.data();
-    const teamSnap = await getDoc(doc(db, "teams", currentTeamId)); const teamData = teamSnap.data();
+    const ref = doc(db, "settings", "activeAuction"); 
+    const snap = await getDoc(ref); 
+    const data = snap.data();
+    if(data.status !== 'active') return;
+
+    // 1. Get Team Data
+    const teamSnap = await getDoc(doc(db, "teams", currentTeamId)); 
+    const teamData = teamSnap.data();
+    
+    // 2. SQUAD SIZE VALIDATION
+    const squadSnap = await getDocs(query(collection(db, "players"), where("soldToId", "==", currentTeamId)));
+    if (squadSnap.size >= Number(auctionRules.maxPlayers)) return alert("SQUAD FULL! You cannot buy more players.");
+
+    // 3. PURSE VALIDATION (The Logic you requested)
     const catRule = globalCategories.find(c => c.name === data.category);
-    const bidAmount = data.highestBidderId ? data.currentBid + Number(catRule.increment) : data.basePrice;
-    if(teamData.purseBalance < bidAmount) return alert("No Money!");
-    await updateDoc(ref, { currentBid: bidAmount, highestBidder: teamData.teamShort, highestBidderId: currentUser.uid, highestBidderTeamId: currentTeamId, timerEnd: 0 });
+    const incrementAmount = Number(catRule.increment);
+    
+    // Calculate what the NEW bid would be
+    // If there are no bids yet, the first bid is the Base Price.
+    // If there are existing bids, the next bid is Current Bid + Increment.
+    let nextRequiredBid;
+    if (data.highestBidderId === null) {
+        nextRequiredBid = data.basePrice;
+    } else {
+        nextRequiredBid = data.currentBid + incrementAmount;
+    }
+
+    if (teamData.purseBalance < nextRequiredBid) {
+        return alert(`INSUFFICIENT FUNDS! Next bid requires $${nextRequiredBid}, but you only have $${teamData.purseBalance}.`);
+    }
+
+    // 4. Update Database if all checks pass
+    await updateDoc(ref, { 
+        currentBid: nextRequiredBid, 
+        highestBidder: teamData.teamShort, 
+        highestBidderId: currentUser.uid, 
+        highestBidderTeamId: currentTeamId, 
+        timerEnd: 0 
+    });
 }
 
 export async function sellPlayer() {
     const snap = await getDoc(doc(db, "settings", "activeAuction")); const data = snap.data(); if(!data.highestBidderTeamId) return alert("No bids!");
-    await updateDoc(doc(db, "players", data.playerId), { 
-        status: "sold", 
-        soldToId: data.highestBidderTeamId, 
-        soldToName: data.highestBidder, // This is teamShort set in bid()
-        price: data.currentBid, 
-        role: data.role, 
-        category: data.category 
-    });
+    await updateDoc(doc(db, "players", data.playerId), { status: "sold", soldToId: data.highestBidderTeamId, soldToName: data.highestBidder, price: data.currentBid, role: data.role, category: data.category });
     await updateDoc(doc(db, "teams", data.highestBidderTeamId), { purseBalance: increment(-data.currentBid) });
     await updateDoc(doc(db, "settings", "activeAuction"), { status: "sold", timerEnd: 0 });
 }
@@ -190,7 +185,8 @@ export async function unsoldPlayer() {
 async function syncRules() {
     const snap = await getDoc(doc(db, "settings", "auctionRules"));
     if (snap.exists()) {
-        globalCategories = snap.data().categories;
+        auctionRules = snap.data();
+        globalCategories = auctionRules.categories;
         const selA = document.getElementById('auction-category-select'), selB = document.getElementById('player-category');
         if(selA) { selA.innerHTML = '<option value="">Category</option>'; globalCategories.forEach(c => selA.innerHTML += `<option value="${c.name}">${c.name}</option>`); }
         if(selB) { selB.innerHTML = '<option value="">Category</option>'; globalCategories.forEach(c => selB.innerHTML += `<option value="${c.name}">${c.name}</option>`); }
@@ -222,11 +218,9 @@ if (document.getElementById('display-p-name')) {
         document.getElementById('display-p-cat').innerText = data.category; 
         document.getElementById('display-p-role').innerText = data.role;
         document.getElementById('display-p-img').src = data.photo || "https://via.placeholder.com/300";
-        
         const b = document.getElementById('player-status-badge'); 
         b.innerText = data.status.toUpperCase(); 
         b.style.background = data.status === 'sold' ? 'var(--success)' : (data.status === 'unsold' ? 'var(--danger)' : 'var(--accent)');
-        
         const tDisp = document.getElementById('timer-display');
         if (data.timerEnd && data.timerEnd > 0 && data.status === 'active') {
              if(timerInterval) clearInterval(timerInterval);
