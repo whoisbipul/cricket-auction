@@ -18,7 +18,7 @@
             <h2>Step 1: League Setup</h2>
             <div id="league-saved-msg" class="hidden"><div style="background:rgba(34,197,94,0.1); color:var(--success); padding:15px; border-radius:12px; margin-bottom:20px; text-align:center; font-weight:700;">✓ League Configured</div></div>
             <div id="league-inputs">
-                <div class="input-group"><label>League Name</label><input type="text" id="league-name" placeholder="Enter League Name"></div>
+                <div class="input-group"><label>League Name</label><input type="text" id="league-name" placeholder="e.g. Premier League"></div>
                 <div class="input-group"><label>League Logo URL</label><input type="text" id="league-logo" placeholder="Paste link here"></div>
                 <button class="btn-primary" onclick="saveLeagueSettings()">Confirm League Details</button>
             </div>
@@ -66,30 +66,20 @@
             </div>
             <button class="btn-success" onclick="handleAddPlayer()">+ Add Player to Pool</button>
             <div id="players-display" class="player-grid"></div>
-            <button class="btn-primary" style="margin-top:40px; background:var(--danger);" onclick="window.location.href='auction.html'">Finalize & Launch Live Auction →</button>
+            <button class="btn-primary" style="margin-top:40px; background:#f59e0b;" id="go-to-access-btn" onclick="showAccessSection()">Next: Create Team Logins →</button>
         </section>
 
-        <!-- STEP 5: TEAM LOGINS (IMPORTANT) -->
-        <section id="access-section" class="setup-card" style="border: 2px solid var(--accent); background: #1a2230;">
+        <!-- STEP 5: TEAM LOGINS -->
+        <section id="access-section" class="setup-card hidden" style="border: 2px solid var(--accent); background: #1a2230;">
             <h2 style="color:var(--accent);">Step 5: Create Team Login Access</h2>
-            <p style="color:var(--text-muted); font-size:13px; margin-bottom:20px;">Use this to create separate login accounts for each participating team.</p>
-            
+            <p style="color:var(--text-muted); font-size:13px; margin-bottom:20px;">Create separate accounts for your friends.</p>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
-                <div class="input-group">
-                    <label>Select Team</label>
-                    <select id="login-team-select" style="border-color:var(--accent);"></select>
-                </div>
-                <div class="input-group">
-                    <label>Assign Password</label>
-                    <input type="text" id="team-pass-setup" placeholder="e.g. welcome123">
-                </div>
+                <div class="input-group"><label>Select Team</label><select id="login-team-select"></select></div>
+                <div class="input-group"><label>Assign Password</label><input type="text" id="team-pass-setup" placeholder="e.g. team123"></div>
             </div>
-            
-            <button class="btn-primary" onclick="handleCreateTeamLogin()">Create Account & Generate Email</button>
-            
-            <div style="margin-top:20px; padding:15px; background:rgba(56,189,248,0.1); border-radius:12px; font-size:12px; color:var(--text-muted);">
-                <b>Note:</b> After creating an account, you (the Admin) will be automatically logged out by Google for security. Just log back in as Admin to create the next team.
-            </div>
+            <button class="btn-primary" onclick="handleCreateTeamLogin()">Create Account</button>
+            <hr style="border:0; border-top:1px solid #30363d; margin:30px 0;">
+            <button class="btn-primary" style="background:var(--danger);" onclick="window.location.href='auction.html'">Finalize & Launch Live Auction →</button>
         </section>
     </div>
 
@@ -102,9 +92,17 @@
         window.handleAddPlayer = addPlayer;
         window.updateBasePrice = updateBasePrice;
         window.handleCreateTeamLogin = createTeamUser;
+        
+        // Navigation Functions
         window.showRulesSection = () => {
             document.getElementById('rules-section').classList.remove('hidden');
-            document.getElementById('go-to-rules-btn').style.display='none';
+            document.getElementById('go-to-rules-btn').classList.add('hidden');
+            document.getElementById('rules-section').scrollIntoView({behavior:'smooth'});
+        };
+        window.showAccessSection = () => {
+            document.getElementById('access-section').classList.remove('hidden');
+            document.getElementById('go-to-access-btn').classList.add('hidden');
+            document.getElementById('access-section').scrollIntoView({behavior:'smooth'});
         };
     </script>
 </body>
