@@ -16,10 +16,10 @@
         <!-- STEP 1: LEAGUE SETUP -->
         <section id="league-section" class="setup-card">
             <h2>Step 1: League Setup</h2>
-            <div id="league-saved-msg" class="hidden"><div class="saved-badge">✓ League Configured</div></div>
+            <div id="league-saved-msg" class="hidden"><div style="background:rgba(34,197,94,0.1); color:var(--success); padding:15px; border-radius:12px; margin-bottom:20px; text-align:center; font-weight:700;">✓ League Configured</div></div>
             <div id="league-inputs">
-                <div class="input-group"><label>League Name</label><input type="text" id="league-name"></div>
-                <div class="input-group"><label>League Logo URL</label><input type="text" id="league-logo"></div>
+                <div class="input-group"><label>League Name</label><input type="text" id="league-name" placeholder="Enter League Name"></div>
+                <div class="input-group"><label>League Logo URL</label><input type="text" id="league-logo" placeholder="Paste link here"></div>
                 <button class="btn-primary" onclick="saveLeagueSettings()">Confirm League Details</button>
             </div>
         </section>
@@ -31,9 +31,9 @@
                 <div class="input-group"><label>Team Name</label><input type="text" id="team-name"></div>
                 <div class="input-group"><label>Short Form</label><input type="text" id="team-short"></div>
             </div>
-            <button class="btn-success" onclick="handleAddTeam()">+ Add Team</button>
+            <button class="btn-success" onclick="handleAddTeam()">+ Add Team to League</button>
             <div id="teams-display" class="team-grid"></div>
-            <button class="btn-primary" style="margin-top:40px; background:#f59e0b;" id="go-to-rules-btn" onclick="showRulesSection()">Next: Define Rules →</button>
+            <button class="btn-primary" style="margin-top:40px; background:#f59e0b;" id="go-to-rules-btn" onclick="showRulesSection()">Next: Define Auction Rules →</button>
         </section>
 
         <!-- STEP 3: RULES -->
@@ -45,16 +45,17 @@
                 <div class="input-group"><label>Max Players</label><input type="number" id="max-players" value="15"></div>
             </div>
             <div id="category-inputs">
+                <label>Categories & Increments</label>
                 <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:10px;">
                     <input type="text" placeholder="Cat A" class="cat-name">
                     <input type="number" placeholder="Base $" class="cat-base">
                     <input type="number" placeholder="Inc $" class="cat-inc">
                 </div>
             </div>
-            <button class="btn-primary" style="background:#8b5cf6;" onclick="handleSaveRules()">Save Rules</button>
+            <button class="btn-primary" style="background:#8b5cf6;" onclick="handleSaveRules()">Save Rules & Continue</button>
         </section>
 
-        <!-- STEP 4: PLAYERS -->
+        <!-- STEP 4: PLAYER POOL -->
         <section id="player-section" class="setup-card hidden">
             <h2>Step 4: Player Pool</h2>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
@@ -63,27 +64,32 @@
                 <div class="input-group"><label>Base Price ($)</label><input type="number" id="player-base-price"></div>
                 <div class="input-group"><label>Role</label><select id="player-role"><option>Batsman</option><option>Bowler</option><option>All-Rounder</option><option>WK</option></select></div>
             </div>
-            <button class="btn-success" onclick="handleAddPlayer()">+ Add Player</button>
+            <button class="btn-success" onclick="handleAddPlayer()">+ Add Player to Pool</button>
             <div id="players-display" class="player-grid"></div>
-            <button class="btn-primary" style="margin-top:40px; background:var(--danger);" onclick="window.location.href='auction.html'">Go to Live Auction Stage →</button>
+            <button class="btn-primary" style="margin-top:40px; background:var(--danger);" onclick="window.location.href='auction.html'">Finalize & Launch Live Auction →</button>
         </section>
 
-        <!-- STEP 5: TEAM ACCESS (New) -->
-        <section id="access-section" class="setup-card" style="margin-top:50px; border-color:var(--accent);">
-            <h2>Step 5: Create Team Logins</h2>
-            <p style="color:var(--text-muted); font-size:13px; margin-bottom:20px;">Create separate accounts for your friends to log in.</p>
+        <!-- STEP 5: TEAM LOGINS (IMPORTANT) -->
+        <section id="access-section" class="setup-card" style="border: 2px solid var(--accent); background: #1a2230;">
+            <h2 style="color:var(--accent);">Step 5: Create Team Login Access</h2>
+            <p style="color:var(--text-muted); font-size:13px; margin-bottom:20px;">Use this to create separate login accounts for each participating team.</p>
+            
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
                 <div class="input-group">
                     <label>Select Team</label>
-                    <select id="login-team-select"></select>
+                    <select id="login-team-select" style="border-color:var(--accent);"></select>
                 </div>
                 <div class="input-group">
-                    <label>Set Password</label>
-                    <input type="text" id="team-pass-setup" placeholder="e.g. team123">
+                    <label>Assign Password</label>
+                    <input type="text" id="team-pass-setup" placeholder="e.g. welcome123">
                 </div>
             </div>
-            <button class="btn-primary" onclick="handleCreateTeamLogin()">Create Team Account</button>
-            <div id="accounts-display" class="team-grid" style="margin-top:20px;"></div>
+            
+            <button class="btn-primary" onclick="handleCreateTeamLogin()">Create Account & Generate Email</button>
+            
+            <div style="margin-top:20px; padding:15px; background:rgba(56,189,248,0.1); border-radius:12px; font-size:12px; color:var(--text-muted);">
+                <b>Note:</b> After creating an account, you (the Admin) will be automatically logged out by Google for security. Just log back in as Admin to create the next team.
+            </div>
         </section>
     </div>
 
