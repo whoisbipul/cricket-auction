@@ -12,43 +12,95 @@
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; }
 
 body { 
-    background-color: var(--bg-dark); color: #ffffff; 
-    overflow-y: auto; min-height: 100vh;
+    background-color: var(--bg-dark); 
+    color: #ffffff; 
+    overflow-y: auto; 
+    min-height: 100vh;
     background-image: radial-gradient(circle at top right, #1e293b, #0b0e14);
 }
 
 .hidden { display: none !important; }
-.admin-container { max-width: 900px; margin: 40px auto; padding: 20px; }
 
-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 1px solid #30363d; }
-h1 { font-weight: 900; color: var(--accent); font-size: 2rem; }
+/* Layout */
+.admin-container, .auction-container { max-width: 1100px; margin: 40px auto; padding: 20px; }
+
+header { 
+    display: flex; justify-content: space-between; align-items: center; 
+    margin-bottom: 40px; padding-bottom: 20px; border-bottom: 1px solid #30363d;
+}
+
+h1 { font-weight: 900; letter-spacing: -1.5px; color: var(--accent); font-size: 2rem; }
 h1 span { color: white; opacity: 0.3; }
 
-.setup-card { background: var(--card-bg); padding: 40px; border-radius: 28px; border: 1px solid #30363d; margin-bottom: 40px; position: relative; }
+/* Cards */
+.setup-card {
+    background: var(--card-bg);
+    padding: 40px;
+    border-radius: 28px;
+    border: 1px solid #30363d;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    margin-bottom: 40px;
+}
+
 h2 { font-weight: 800; margin-bottom: 30px; font-size: 1.6rem; }
 
-.input-group { margin-bottom: 20px; }
-label { display: block; margin-bottom: 8px; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+.input-group { margin-bottom: 25px; }
+label { display: block; margin-bottom: 10px; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
 
-input, select { width: 100%; padding: 14px; background: #0d1117; border: 2px solid #30363d; border-radius: 12px; color: white; font-size: 1rem; }
+input, select {
+    width: 100%; padding: 16px; background: #0d1117; 
+    border: 2px solid #30363d; border-radius: 14px; color: white; 
+    font-size: 1rem;
+}
 
-button { cursor: pointer; font-weight: 800; padding: 15px 25px; border-radius: 12px; border: none; transition: 0.3s; }
+/* Buttons */
+button { cursor: pointer; font-weight: 800; padding: 16px 30px; border-radius: 14px; border: none; }
 .btn-primary { background: var(--accent); color: #0b0e14; width: 100%; }
 .btn-success { background: var(--success); color: white; width: 100%; }
 .btn-danger { background: var(--danger); color: white; }
 
-/* Delete Button Style */
 .btn-delete {
     background: rgba(239, 68, 68, 0.1);
     color: var(--danger);
-    padding: 5px 10px;
-    font-size: 10px;
-    border-radius: 6px;
-    margin-top: 5px;
+    padding: 6px 12px;
+    font-size: 11px;
+    border-radius: 8px;
+    margin-top: 8px;
 }
-.btn-delete:hover { background: var(--danger); color: white; }
 
-.team-grid, .player-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin-top: 25px; }
-.team-pill { background: #21262d; padding: 15px; border-radius: 18px; border: 1px solid #30363d; text-align: center; }
+/* Auction Stage Layout (RESTORED) */
+.auction-main-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 40px; margin-top: 20px; }
+
+.player-stage-card {
+    background: var(--card-bg); padding: 40px; border-radius: 35px;
+    border: 2px solid var(--accent); text-align: center; position: relative;
+}
+
+.player-stage-card img {
+    width: 280px; height: 280px; border-radius: 24px; object-fit: cover;
+    margin-bottom: 25px; border: 6px solid #0d1117;
+}
+
+.status-badge {
+    position: absolute; top: 25px; right: 25px; padding: 8px 20px;
+    border-radius: 12px; font-weight: 800; font-size: 0.75rem;
+}
+
+.bid-stat { 
+    background: #0d1117; padding: 25px; border-radius: 22px; 
+    text-align: center; border: 1px solid #30363d; margin-bottom: 20px;
+}
+
+.high-bid { border: 2px solid var(--success); }
+.high-bid h3 { color: var(--success); font-size: 2.8rem; font-weight: 900; }
+
+.team-grid, .player-grid { 
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
+    gap: 15px; margin-top: 25px; 
+}
+.team-pill { 
+    background: #21262d; padding: 15px; border-radius: 18px; 
+    border: 1px solid #30363d; text-align: center;
+}
 
 .cat-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
