@@ -28,7 +28,7 @@ export async function loginUser() {
     try { await signInWithEmailAndPassword(auth, e, p); window.location.href = "admin.html"; } catch(err) { alert("Login Error"); }
 }
 
-// --- SETUP FUNCTIONS ---
+// --- SETUP ---
 export async function saveLeague() {
     const n = document.getElementById('league-name').value;
     const l = document.getElementById('league-logo').value;
@@ -79,6 +79,8 @@ export function updateBasePrice() {
 // --- AUCTION ENGINE ---
 export async function nextPlayer() {
     const cat = document.getElementById('auction-category-select').value;
+    if(!cat) return alert("Select Category!");
+
     const q = query(collection(db, "players"), where("category", "==", cat), where("status", "==", "unsold"));
     const snap = await getDocs(q);
     if (snap.empty) return alert("Category Complete!");
@@ -87,7 +89,7 @@ export async function nextPlayer() {
     snap.forEach(d => list.push({ id: d.id, ...d.data() }));
     const p = list[Math.floor(Math.random() * list.length)];
 
-    // Set end time to 30 seconds from now
+    // Force Timer to 30 Seconds
     const endTime = Date.now() + 31000; 
 
     await setDoc(doc(db, "settings", "activeAuction"), {
@@ -102,13 +104,15 @@ export async function bid() {
     const ref = doc(db, "settings", "activeAuction");
     const snap = await getDoc(ref);
     const data = snap.data();
+    if(data.status !== 'active') return;
+
     const catRule = globalCategories.find(c => c.name === data.category);
     
     await updateDoc(ref, {
         currentBid: increment(Number(catRule.increment)),
         highestBidder: currentUser.email,
         highestBidderId: currentUser.uid,
-        timerEnd: null // STOP the timer once a bid is placed
+        timerEnd: 0 // Using 0 to signal "Stop"
     });
 }
 
@@ -116,17 +120,17 @@ export async function sellPlayer() {
     const snap = await getDoc(doc(db, "settings", "activeAuction"));
     const data = snap.data();
     await updateDoc(doc(db, "players", data.playerId), { status: "sold", soldTo: data.highestBidder, price: data.currentBid });
-    await updateDoc(doc(db, "settings", "activeAuction"), { status: "sold", timerEnd: null });
+    await updateDoc(doc(db, "settings", "activeAuction"), { status: "sold", timerEnd: 0 });
 }
 
 export async function unsoldPlayer() {
     const snap = await getDoc(doc(db, "settings", "activeAuction"));
     const data = snap.data();
     await updateDoc(doc(db, "players", data.playerId), { status: "unsold_box" });
-    await updateDoc(doc(db, "settings", "activeAuction"), { status: "unsold", timerEnd: null });
+    await updateDoc(doc(db, "settings", "activeAuction"), { status: "unsold", timerEnd: 0 });
 }
 
-// --- TIMER LOGIC ---
+// --- TIMER ENGINE ---
 function startLocalTimer(endTime) {
     if(timerInterval) clearInterval(timerInterval);
     const display = document.getElementById('timer-display');
@@ -134,27 +138,30 @@ function startLocalTimer(endTime) {
     timerInterval = setInterval(() => {
         const now = Date.now();
         const distance = endTime - now;
-        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        const seconds = Math.floor(distance / 1000);
 
-        if (distance < 0) {
+        if (distance <= 0) {
             clearInterval(timerInterval);
             display.innerText = "0s";
-            if(currentRole === 'admin') autoUnsold();
+            display.style.color = "var(--danger)";
+            // Only the Admin's browser triggers the auto-unsold to avoid double-writing
+            if(currentRole === 'admin') autoUnsoldCheck();
         } else {
             display.innerText = seconds + "s";
-            display.style.color = seconds <= 5 ? "var(--danger)" : "var(--success)";
+            display.style.color = seconds <= 10 ? "var(--danger)" : "var(--success)";
         }
     }, 1000);
 }
 
-async function autoUnsold() {
+async function autoUnsoldCheck() {
     const snap = await getDoc(doc(db, "settings", "activeAuction"));
-    if(snap.data().highestBidderId === null && snap.data().status === 'active') {
+    const data = snap.data();
+    if(data.highestBidderId === null && data.status === 'active') {
         unsoldPlayer();
     }
 }
 
-// --- LIVE LISTENERS ---
+// --- LIVE LISTENER ---
 if (document.getElementById('display-p-name')) {
     onSnapshot(doc(db, "settings", "activeAuction"), (d) => {
         const data = d.data();
@@ -171,24 +178,26 @@ if (document.getElementById('display-p-name')) {
         badge.innerText = data.status.toUpperCase();
         badge.style.background = data.status === 'sold' ? 'var(--success)' : (data.status === 'unsold' ? 'var(--danger)' : 'var(--accent)');
 
-        // Handle Timer UI
         const display = document.getElementById('timer-display');
-        if (data.timerEnd && data.status === 'active') {
+        
+        // Timer Logic: If timerEnd is valid and greater than 0, start counting
+        if (data.timerEnd && data.timerEnd > 0 && data.status === 'active') {
             startLocalTimer(data.timerEnd);
         } else {
             if(timerInterval) clearInterval(timerInterval);
-            display.innerText = "PAUSED";
+            display.innerText = data.status === 'active' ? "BIDDING" : "PAUSED";
             display.style.color = "var(--text-muted)";
         }
     });
 }
 
-// (Auth and syncRules functions stay at bottom)
+// --- AUTH & SYNC ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         currentUser = user;
         const userDoc = await getDoc(doc(db, "users", user.uid));
         currentRole = userDoc.data().role;
+        
         const adminControls = document.getElementById('admin-controls');
         const teamControls = document.getElementById('team-controls');
         if (adminControls && currentRole !== 'admin') adminControls.classList.add('hidden');
@@ -204,7 +213,7 @@ async function syncRules() {
         const selectA = document.getElementById('auction-category-select');
         const selectB = document.getElementById('player-category');
         if (selectA) {
-            selectA.innerHTML = '<option value="">Select Category</option>';
+            selectA.innerHTML = '<option value="">Category</option>';
             globalCategories.forEach(c => selectA.innerHTML += `<option value="${c.name}">${c.name}</option>`);
         }
         if (selectB) {
