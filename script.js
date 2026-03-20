@@ -9,7 +9,6 @@ const auth = getAuth(app);
 
 let currentUser = null, currentRole = null, currentTeamId = null, globalCategories = [], timerInterval = null, auctionRules = null;
 
-// --- AUTH & INITIALIZATION ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         currentUser = user;
@@ -17,11 +16,9 @@ onAuthStateChanged(auth, async (user) => {
         if (userDoc.exists()) {
             currentRole = userDoc.data().role;
             currentTeamId = userDoc.data().teamId || null;
-            
             const ac = document.getElementById('admin-controls'), tc = document.getElementById('team-controls');
             if (ac && currentRole !== 'admin') ac.classList.add('hidden');
             if (tc && currentRole === 'admin') tc.classList.add('hidden');
-
             if (currentRole === 'team' && currentTeamId) {
                 document.getElementById('my-team-stats')?.classList.remove('hidden');
                 document.getElementById('personal-squad-section')?.classList.remove('hidden');
@@ -31,9 +28,7 @@ onAuthStateChanged(auth, async (user) => {
                     if(document.getElementById('my-team-purse')) document.getElementById('my-team-purse').innerText = "$" + tData.purseBalance;
                 });
             }
-            syncRules();
-            syncSquadTracker();
-            loadLeagueBranding();
+            syncRules(); syncSquadTracker(); loadLeagueBranding();
         }
     }
 });
@@ -60,7 +55,6 @@ function syncSquadTracker() {
     });
 }
 
-// --- SETUP FUNCTIONS ---
 export async function loginUser() {
     const e = document.getElementById('email').value, p = document.getElementById('password').value;
     try { const res = await signInWithEmailAndPassword(auth, e, p); const uDoc = await getDoc(doc(db, "users", res.user.uid)); if(uDoc.data().role === 'admin') window.location.href="admin.html"; else window.location.href="auction.html"; } catch(err) { alert(err.message); }
@@ -87,8 +81,19 @@ export async function saveRules() {
 }
 
 export async function addPlayer() {
-    const pData = { name: document.getElementById('player-name').value, category: document.getElementById('player-category').value, basePrice: document.getElementById('player-base-price').value, role: document.getElementById('player-role').value, photo: document.getElementById('player-photo').value, status: "unsold" };
-    await addDoc(collection(db, "players"), pData); document.getElementById('player-name').value = ""; document.getElementById('player-photo').value = "";
+    const pData = { 
+        name: document.getElementById('player-name').value, 
+        category: document.getElementById('player-category').value, 
+        basePrice: document.getElementById('player-base-price').value, 
+        role: document.getElementById('player-role').value, 
+        photo: document.getElementById('player-photo').value, 
+        realTeam: document.getElementById('player-real-team').value, // NEW
+        status: "unsold" 
+    };
+    await addDoc(collection(db, "players"), pData); 
+    document.getElementById('player-name').value = ""; 
+    document.getElementById('player-photo').value = "";
+    document.getElementById('player-real-team').value = "";
 }
 
 export function updateBasePrice() {
@@ -107,7 +112,6 @@ export async function deletePlayer(id) { if(confirm("Delete?")) await deleteDoc(
 export async function resetLeague() { if(confirm("Clear?")) { await deleteDoc(doc(db, "settings", "leagueInfo")); location.reload(); } }
 export async function resetRules() { if(confirm("Reset?")) { await deleteDoc(doc(db, "settings", "auctionRules")); location.reload(); } }
 
-// --- AUCTION ENGINE ---
 export async function nextPlayer() {
     const cat = document.getElementById('auction-category-select').value;
     const q = query(collection(db, "players"), where("category", "==", cat), where("status", "==", "unsold"));
@@ -115,7 +119,14 @@ export async function nextPlayer() {
     const list = []; snap.forEach(d => list.push({ id: d.id, ...d.data() }));
     const p = list[Math.floor(Math.random() * list.length)];
     const endTime = Date.now() + 31000;
-    await setDoc(doc(db, "settings", "activeAuction"), { playerId: p.id, name: p.name, category: p.category, basePrice: Number(p.basePrice), currentBid: Number(p.basePrice), highestBidder: "No Bids", highestBidderId: null, highestBidderTeamId: null, status: "active", role: p.role, photo: p.photo || "", timerEnd: endTime });
+    await setDoc(doc(db, "settings", "activeAuction"), { 
+        playerId: p.id, name: p.name, category: p.category, 
+        basePrice: Number(p.basePrice), currentBid: Number(p.basePrice), 
+        highestBidder: "No Bids", highestBidderId: null, highestBidderTeamId: null, 
+        status: "active", role: p.role, photo: p.photo || "", 
+        realTeam: p.realTeam || "Unassigned", // NEW
+        timerEnd: endTime 
+    });
 }
 
 export async function bid() {
@@ -146,8 +157,7 @@ export async function unsoldPlayer() {
 async function syncRules() {
     const snap = await getDoc(doc(db, "settings", "auctionRules"));
     if (snap.exists()) {
-        auctionRules = snap.data();
-        globalCategories = auctionRules.categories;
+        auctionRules = snap.data(); globalCategories = auctionRules.categories;
         const selA = document.getElementById('auction-category-select'), selB = document.getElementById('player-category');
         if(selA) { selA.innerHTML = '<option value="">Category</option>'; globalCategories.forEach(c => selA.innerHTML += `<option value="${c.name}">${c.name}</option>`); }
         if(selB) { selB.innerHTML = '<option value="">Category</option>'; globalCategories.forEach(c => selB.innerHTML += `<option value="${c.name}">${c.name}</option>`); }
@@ -169,7 +179,6 @@ if (document.getElementById('players-display')) {
     });
 }
 
-// --- LIVE BROADCAST LISTENER ---
 if (document.getElementById('display-p-name')) {
     onSnapshot(doc(db, "settings", "activeAuction"), (d) => {
         const data = d.data(); if(!data) return;
@@ -179,17 +188,13 @@ if (document.getElementById('display-p-name')) {
         document.getElementById('display-p-bidder').innerText = data.highestBidder; 
         document.getElementById('display-p-cat').innerText = data.category; 
         document.getElementById('display-p-role').innerText = data.role;
+        document.getElementById('display-p-real-team').innerText = data.realTeam; // NEW
         document.getElementById('display-p-img').src = data.photo || "https://via.placeholder.com/300";
-        const b = document.getElementById('player-status-badge'); 
-        b.innerText = data.status.toUpperCase(); 
+        const b = document.getElementById('player-status-badge'); b.innerText = data.status.toUpperCase(); 
         b.style.background = data.status === 'sold' ? 'var(--success)' : (data.status === 'unsold' ? 'var(--danger)' : 'var(--accent)');
         
-        // TRIGGER SOLD STAMP POPUP
         const overlay = document.getElementById('sold-overlay');
-        if (data.status === 'sold' && overlay) {
-            overlay.classList.remove('hidden-overlay');
-            setTimeout(() => { overlay.classList.add('hidden-overlay'); }, 3000); // Hide after 3 seconds
-        }
+        if (data.status === 'sold' && overlay) { overlay.classList.remove('hidden-overlay'); setTimeout(() => { overlay.classList.add('hidden-overlay'); }, 3000); }
 
         const tDisp = document.getElementById('timer-display');
         if (data.timerEnd && data.timerEnd > 0 && data.status === 'active') {
