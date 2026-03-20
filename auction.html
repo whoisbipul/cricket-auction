@@ -8,7 +8,6 @@
 </head>
 <body>
 
-    <!-- NEW: SOLD POPUP OVERLAY -->
     <div id="sold-overlay" class="hidden-overlay">
         <img src="https://i.ibb.co/3yk8S6p/sold-stamp.png" id="sold-stamp-img">
     </div>
@@ -30,6 +29,7 @@
                 <div id="player-status-badge" class="status-badge status-active">ACTIVE</div>
                 <img id="display-p-img" src="https://via.placeholder.com/300" alt="Player">
                 <h2 id="display-p-name">Waiting...</h2>
+                <div style="margin-bottom:10px; color:var(--accent); font-weight:800; letter-spacing:1px;" id="display-p-real-team">---</div>
                 <div style="display:flex; justify-content:center; gap:20px; color:var(--text-muted); font-weight:700;">
                     <span id="display-p-role">---</span> | <span id="display-p-cat">---</span>
                 </div>
@@ -57,11 +57,9 @@
 
                 <div id="my-team-stats" class="setup-card hidden" style="margin-top:20px; padding:20px; border-color:var(--success); background: rgba(34, 197, 94, 0.05);">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <div>
-                                <span style="font-size:10px; font-weight:800; color:var(--success);">TEAM:</span>
-                                <div id="my-team-name" style="font-weight:900; font-size:1.2rem; color:white;">---</div>
-                            </div>
+                        <div>
+                            <span style="font-size:10px; font-weight:800; color:var(--success);">TEAM:</span>
+                            <div id="my-team-name" style="font-weight:900; font-size:1.2rem; color:white;">---</div>
                         </div>
                         <div style="text-align:right;">
                             <span style="font-size:10px; font-weight:800; color:var(--success);">REMAINING PURSE:</span>
