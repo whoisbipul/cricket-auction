@@ -1,17 +1,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, collection, addDoc, onSnapshot, query, where, getDocs, updateDoc, increment, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, collection, addDoc, onSnapshot, query, where, getDocs, updateDoc, increment, deleteDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-const firebaseConfig = { 
-    apiKey: "AIzaSyCF5fo4zu4G7qD_wllxSy5cJPp1BTMCPog", 
-    authDomain: "cricketauction-dac71.firebaseapp.com", 
-    projectId: "cricketauction-dac71", 
-    storageBucket: "cricketauction-dac71.firebasestorage.app", 
-    messagingSenderId: "767785113298", 
-    appId: "1:767785113298:web:bb87d9d2ea845a2a95bf0b", 
-    measurementId: "G-GNP2EJ5G6Q" 
-};
-
+const firebaseConfig = { apiKey: "AIzaSyCF5fo4zu4G7qD_wllxSy5cJPp1BTMCPog", authDomain: "cricketauction-dac71.firebaseapp.com", projectId: "cricketauction-dac71", storageBucket: "cricketauction-dac71.firebasestorage.app", messagingSenderId: "767785113298", appId: "1:767785113298:web:bb87d9d2ea845a2a95bf0b", measurementId: "G-GNP2EJ5G6Q" };
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
@@ -128,45 +119,15 @@ export async function nextPlayer() {
 }
 
 export async function bid() {
-    const ref = doc(db, "settings", "activeAuction"); 
-    const snap = await getDoc(ref); 
-    const data = snap.data();
+    const ref = doc(db, "settings", "activeAuction"); const snap = await getDoc(ref); const data = snap.data();
     if(data.status !== 'active') return;
-
-    // 1. Get Team Data
-    const teamSnap = await getDoc(doc(db, "teams", currentTeamId)); 
-    const teamData = teamSnap.data();
-    
-    // 2. SQUAD SIZE VALIDATION
+    const teamSnap = await getDoc(doc(db, "teams", currentTeamId)); const teamData = teamSnap.data();
     const squadSnap = await getDocs(query(collection(db, "players"), where("soldToId", "==", currentTeamId)));
-    if (squadSnap.size >= Number(auctionRules.maxPlayers)) return alert("SQUAD FULL! You cannot buy more players.");
-
-    // 3. PURSE VALIDATION (The Logic you requested)
+    if (squadSnap.size >= Number(auctionRules.maxPlayers)) return alert("SQUAD FULL!");
     const catRule = globalCategories.find(c => c.name === data.category);
-    const incrementAmount = Number(catRule.increment);
-    
-    // Calculate what the NEW bid would be
-    // If there are no bids yet, the first bid is the Base Price.
-    // If there are existing bids, the next bid is Current Bid + Increment.
-    let nextRequiredBid;
-    if (data.highestBidderId === null) {
-        nextRequiredBid = data.basePrice;
-    } else {
-        nextRequiredBid = data.currentBid + incrementAmount;
-    }
-
-    if (teamData.purseBalance < nextRequiredBid) {
-        return alert(`INSUFFICIENT FUNDS! Next bid requires $${nextRequiredBid}, but you only have $${teamData.purseBalance}.`);
-    }
-
-    // 4. Update Database if all checks pass
-    await updateDoc(ref, { 
-        currentBid: nextRequiredBid, 
-        highestBidder: teamData.teamShort, 
-        highestBidderId: currentUser.uid, 
-        highestBidderTeamId: currentTeamId, 
-        timerEnd: 0 
-    });
+    const bidAmount = data.highestBidderId ? data.currentBid + Number(catRule.increment) : data.basePrice;
+    if(teamData.purseBalance < bidAmount) return alert("No Money!");
+    await updateDoc(ref, { currentBid: bidAmount, highestBidder: teamData.teamShort, highestBidderId: currentUser.uid, highestBidderTeamId: currentTeamId, timerEnd: 0 });
 }
 
 export async function sellPlayer() {
@@ -208,6 +169,7 @@ if (document.getElementById('players-display')) {
     });
 }
 
+// --- LIVE BROADCAST LISTENER ---
 if (document.getElementById('display-p-name')) {
     onSnapshot(doc(db, "settings", "activeAuction"), (d) => {
         const data = d.data(); if(!data) return;
@@ -221,6 +183,14 @@ if (document.getElementById('display-p-name')) {
         const b = document.getElementById('player-status-badge'); 
         b.innerText = data.status.toUpperCase(); 
         b.style.background = data.status === 'sold' ? 'var(--success)' : (data.status === 'unsold' ? 'var(--danger)' : 'var(--accent)');
+        
+        // TRIGGER SOLD STAMP POPUP
+        const overlay = document.getElementById('sold-overlay');
+        if (data.status === 'sold' && overlay) {
+            overlay.classList.remove('hidden-overlay');
+            setTimeout(() => { overlay.classList.add('hidden-overlay'); }, 3000); // Hide after 3 seconds
+        }
+
         const tDisp = document.getElementById('timer-display');
         if (data.timerEnd && data.timerEnd > 0 && data.status === 'active') {
              if(timerInterval) clearInterval(timerInterval);
