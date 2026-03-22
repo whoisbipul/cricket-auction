@@ -13,7 +13,7 @@
             <button onclick="handleLogout()" class="btn-danger" style="padding:8px 16px; font-size:12px;">Logout</button>
         </header>
 
-        <!-- STEP 1 -->
+        <!-- STEP 1: LEAGUE -->
         <section id="league-section" class="setup-card">
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <h2>Step 1: League Setup</h2>
@@ -27,7 +27,7 @@
             </div>
         </section>
 
-        <!-- STEP 2 -->
+        <!-- STEP 2: TEAMS -->
         <section id="team-section" class="setup-card hidden">
             <h2>Step 2: Participating Teams</h2>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
@@ -39,25 +39,37 @@
             <button class="btn-primary" style="margin-top:40px; background:#f59e0b;" id="go-to-rules-btn" onclick="showRulesSection()">Next: Define Rules →</button>
         </section>
 
-        <!-- STEP 3 -->
+        <!-- STEP 3: RULES (WITH YOUR SPECIFIC DEFAULTS) -->
         <section id="rules-section" class="setup-card hidden">
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <h2>Step 3: Auction Rules ($)</h2>
                 <button onclick="resetRules()" class="btn-delete">Reset Rules</button>
             </div>
             <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:20px;">
-                <div class="input-group"><label>Purse per Team</label><input type="number" id="purse-value" value="10000"></div>
+                <div class="input-group"><label>Purse per Team</label><input type="number" id="purse-value" value="100000000"></div>
                 <div class="input-group"><label>Min Players</label><input type="number" id="min-players" value="11"></div>
                 <div class="input-group"><label>Max Players</label><input type="number" id="max-players" value="15"></div>
             </div>
             <label>Categories (Fixed A, B, C)</label>
-            <div class="cat-row"><input type="text" value="Category A" readonly><input type="number" placeholder="Base $" class="cat-base"><input type="number" placeholder="Inc $" class="cat-inc"></div>
-            <div class="cat-row"><input type="text" value="Category B" readonly><input type="number" placeholder="Base $" class="cat-base"><input type="number" placeholder="Inc $" class="cat-inc"></div>
-            <div class="cat-row"><input type="text" value="Category C" readonly><input type="number" placeholder="Base $" class="cat-base"><input type="number" placeholder="Inc $" class="cat-inc"></div>
+            <div class="cat-row">
+                <input type="text" value="Category A" readonly>
+                <input type="number" id="cat-a-base" value="10000000" class="cat-base">
+                <input type="number" id="cat-a-inc" value="500000" class="cat-inc">
+            </div>
+            <div class="cat-row">
+                <input type="text" value="Category B" readonly>
+                <input type="number" id="cat-b-base" value="5000000" class="cat-base">
+                <input type="number" id="cat-b-inc" value="200000" class="cat-inc">
+            </div>
+            <div class="cat-row">
+                <input type="text" value="Category C" readonly>
+                <input type="number" id="cat-c-base" value="2000000" class="cat-base">
+                <input type="number" id="cat-c-inc" value="100000" class="cat-inc">
+            </div>
             <button class="btn-primary" style="background:#8b5cf6;" onclick="handleSaveRules()">Save Rules & Continue</button>
         </section>
 
-        <!-- STEP 4 -->
+        <!-- STEP 4: PLAYER POOL -->
         <section id="player-section" class="setup-card hidden">
             <h2>Step 4: Player Pool</h2>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
@@ -65,8 +77,6 @@
                 <div class="input-group"><label>Category</label><select id="player-category" onchange="updateBasePrice()"></select></div>
                 <div class="input-group"><label>Base Price ($)</label><input type="number" id="player-base-price"></div>
                 <div class="input-group"><label>Role</label><select id="player-role"><option>Batsman</option><option>Bowler</option><option>All-Rounder</option><option>WK</option></select></div>
-                
-                <!-- NEW: IPL TEAM DROPDOWN -->
                 <div class="input-group" style="grid-column: span 2;">
                     <label>IPL 2026 Team</label>
                     <select id="player-real-team">
@@ -83,8 +93,7 @@
                         <option value="Gujarat Titans">Gujarat Titans</option>
                     </select>
                 </div>
-
-                <div class="input-group" style="grid-column: span 2;"><label>Player Photo URL</label><input type="text" id="player-photo" placeholder="Paste image link here"></div>
+                <div class="input-group" style="grid-column: span 2;"><label>Player Photo URL</label><input type="text" id="player-photo"></div>
             </div>
             <button class="btn-success" onclick="handleAddPlayer()">+ Add Player to Pool</button>
             <div id="players-display" class="player-grid"></div>
