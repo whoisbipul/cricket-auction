@@ -26,7 +26,7 @@ onAuthStateChanged(auth, async (user) => {
                 onSnapshot(doc(db, "teams", currentTeamId), (tDoc) => {
                     const tData = tDoc.data();
                     if(document.getElementById('my-team-name')) document.getElementById('my-team-name').innerText = tData.teamShort;
-                    if(document.getElementById('my-team-purse')) document.getElementById('my-team-purse').innerText = "$" + tData.purseBalance;
+                    if(document.getElementById('my-team-purse')) document.getElementById('my-team-purse').innerText = "$" + tData.purseBalance.toLocaleString();
                 });
             }
             syncRules(); syncSquadTracker(); loadLeagueBranding();
@@ -50,8 +50,8 @@ function syncSquadTracker() {
         if(globalList) globalList.innerHTML = ""; if(mySquadList) mySquadList.innerHTML = "";
         snap.forEach(d => {
             const p = d.data();
-            if(globalList) globalList.innerHTML += `<tr><td><b>${p.name}</b></td><td>${p.soldToName || '---'}</td><td style="color:var(--success); font-weight:700;">$${p.price}</td></tr>`;
-            if(mySquadList && p.soldToId === currentTeamId) mySquadList.innerHTML += `<tr><td><b>${p.name}</b></td><td>${p.role} (${p.category})</td><td style="color:var(--accent); font-weight:700;">$${p.price}</td></tr>`;
+            if(globalList) globalList.innerHTML += `<tr><td><b>${p.name}</b></td><td>${p.soldToName || '---'}</td><td style="color:var(--success); font-weight:700;">$${p.price.toLocaleString()}</td></tr>`;
+            if(mySquadList && p.soldToId === currentTeamId) mySquadList.innerHTML += `<tr><td><b>${p.name}</b></td><td>${p.role} (${p.category})</td><td style="color:var(--accent); font-weight:700;">$${p.price.toLocaleString()}</td></tr>`;
         });
     });
 }
@@ -74,27 +74,17 @@ export async function addTeam() {
 }
 
 export async function saveRules() {
-    const rules = { categories: [], purse: document.getElementById('purse-value').value, maxPlayers: document.getElementById('max-players').value };
+    const rules = { categories: [], purse: document.getElementById('purse-value').value, maxPlayers: document.getElementById('min-players').value };
     const bases = document.getElementsByClassName('cat-base'), incs = document.getElementsByClassName('cat-inc'), names = ["Category A", "Category B", "Category C"];
     for(let i=0; i<3; i++) { if(bases[i].value) rules.categories.push({ name: names[i], basePrice: bases[i].value, increment: incs[i].value }); }
     await setDoc(doc(db, "settings", "auctionRules"), rules);
     const ts = await getDocs(collection(db, "teams")); ts.forEach(async (t) => { await updateDoc(doc(db, "teams", t.id), { purseBalance: Number(rules.purse) }); });
-    alert("Saved!"); document.getElementById('player-section').classList.remove('hidden'); syncRules();
+    alert("Rules Saved Consistency Enabled!"); document.getElementById('player-section').classList.remove('hidden'); syncRules();
 }
 
 export async function addPlayer() {
-    const pData = { 
-        name: document.getElementById('player-name').value, 
-        category: document.getElementById('player-category').value, 
-        basePrice: document.getElementById('player-base-price').value, 
-        role: document.getElementById('player-role').value, 
-        photo: document.getElementById('player-photo').value, 
-        realTeam: document.getElementById('player-real-team').value,
-        status: "unsold",
-        createdAt: Date.now() // Added for sorting
-    };
-    await addDoc(collection(db, "players"), pData); 
-    document.getElementById('player-name').value = ""; document.getElementById('player-photo').value = "";
+    const pData = { name: document.getElementById('player-name').value, category: document.getElementById('player-category').value, basePrice: document.getElementById('player-base-price').value, role: document.getElementById('player-role').value, photo: document.getElementById('player-photo').value, realTeam: document.getElementById('player-real-team').value, status: "unsold", createdAt: Date.now() };
+    await addDoc(collection(db, "players"), pData); document.getElementById('player-name').value = ""; document.getElementById('player-photo').value = "";
 }
 
 export function updateBasePrice() {
@@ -149,10 +139,22 @@ export async function unsoldPlayer() {
     await updateDoc(doc(db, "settings", "activeAuction"), { status: "unsold", timerEnd: 0 });
 }
 
+// --- SYNC RULES & AUTO-FILL INPUTS ---
 async function syncRules() {
     const snap = await getDoc(doc(db, "settings", "auctionRules"));
     if (snap.exists()) {
         auctionRules = snap.data(); globalCategories = auctionRules.categories;
+        
+        // AUTO-FILL THE ADMIN FORM IF ON SCREEN
+        if(document.getElementById('purse-value')) {
+            document.getElementById('purse-value').value = auctionRules.purse;
+            const bases = document.getElementsByClassName('cat-base'), incs = document.getElementsByClassName('cat-inc');
+            auctionRules.categories.forEach((c, index) => {
+                if(bases[index]) bases[index].value = c.basePrice;
+                if(incs[index]) incs[index].value = c.increment;
+            });
+        }
+
         const selA = document.getElementById('auction-category-select'), selB = document.getElementById('player-category');
         if(selA) { selA.innerHTML = '<option value="">Category</option>'; globalCategories.forEach(c => selA.innerHTML += `<option value="${c.name}">${c.name}</option>`); }
         if(selB) { selB.innerHTML = '<option value="">Category</option>'; globalCategories.forEach(c => selB.innerHTML += `<option value="${c.name}">${c.name}</option>`); }
@@ -163,39 +165,31 @@ if (document.getElementById('teams-display')) {
     onSnapshot(collection(db, "teams"), (snap) => {
         const d = document.getElementById('teams-display'), l = document.getElementById('login-team-select');
         if(d) d.innerHTML = ""; if(l) l.innerHTML = '<option value="">Select Team</option>';
-        snap.forEach(doc => { const t = doc.data(); if(d) d.innerHTML += `<div class="team-pill"><strong>${t.teamShort}</strong><br><small>$${t.purseBalance}</small><br><button class="btn-delete" onclick="handleDeleteTeam('${doc.id}')">Delete</button></div>`; if(l) l.innerHTML += `<option value="${doc.id}">${t.teamShort} - ${t.teamName}</option>`; });
+        snap.forEach(doc => { const t = doc.data(); if(d) d.innerHTML += `<div class="team-pill"><strong>${t.teamShort}</strong><br><small>$${t.purseBalance.toLocaleString()}</small><br><button class="btn-delete" onclick="handleDeleteTeam('${doc.id}')">Delete</button></div>`; if(l) l.innerHTML += `<option value="${doc.id}">${t.teamShort} - ${t.teamName}</option>`; });
     });
 }
 
-// --- OPTIMIZED PLAYER LISTENER (The Fix for Lagginess) ---
 if (document.getElementById('players-display')) {
-    // Only fetch the 10 most recent players to keep the Admin UI responsive
     const qLatest = query(collection(db, "players"), orderBy("createdAt", "desc"), limit(10));
-    
     onSnapshot(qLatest, (snap) => {
-        const d = document.getElementById('players-display');
-        if(d) {
-            d.innerHTML = "";
-            // Add a simple counter at the top of the display
-            d.innerHTML = `<div style="grid-column: 1/-1; margin-bottom:10px; color:var(--accent); font-size:12px; font-weight:700;">SHOWING LAST 10 ADDED PLAYERS</div>`;
-            
-            snap.forEach(doc => {
-                const p = doc.data();
-                const div = document.createElement('div'); div.className="team-pill"; div.style.textAlign="left";
-                div.innerHTML = `<strong>${p.name}</strong><br><small>${p.category}</small><br><button class="btn-delete" onclick="handleDeletePlayer('${doc.id}')">Remove</button>`;
-                d.appendChild(div);
-            });
-        }
+        const d = document.getElementById('players-display'); if(d) { d.innerHTML = `<div style="grid-column: 1/-1; margin-bottom:10px; color:var(--accent); font-size:12px; font-weight:700;">SHOWING LAST 10 ADDED PLAYERS</div>`;
+        snap.forEach(doc => { const p = doc.data(); if(p.status === 'unsold') d.innerHTML += `<div class="team-pill" style="text-align:left;"><strong>${p.name}</strong><br><small>${p.category}</small><br><button class="btn-delete" onclick="handleDeletePlayer('${doc.id}')">Remove</button></div>`; }); }
     });
 }
 
 if (document.getElementById('display-p-name')) {
     onSnapshot(doc(db, "settings", "activeAuction"), (d) => {
         const data = d.data(); if(!data) return;
-        document.getElementById('display-p-name').innerText = data.name; document.getElementById('display-p-base').innerText = "$" + data.basePrice; document.getElementById('display-p-current-bid').innerText = "$" + data.currentBid; document.getElementById('display-p-bidder').innerText = data.highestBidder; document.getElementById('display-p-cat').innerText = data.category; document.getElementById('display-p-role').innerText = data.role;
+        document.getElementById('display-p-name').innerText = data.name; 
+        document.getElementById('display-p-base').innerText = "$" + data.basePrice.toLocaleString(); 
+        document.getElementById('display-p-current-bid').innerText = "$" + data.currentBid.toLocaleString(); 
+        document.getElementById('display-p-bidder').innerText = data.highestBidder; 
+        document.getElementById('display-p-cat').innerText = data.category; 
+        document.getElementById('display-p-role').innerText = data.role;
         if(document.getElementById('display-p-real-team')) document.getElementById('display-p-real-team').innerText = data.realTeam;
         document.getElementById('display-p-img').src = data.photo || "https://via.placeholder.com/300";
-        const b = document.getElementById('player-status-badge'); b.innerText = data.status.toUpperCase(); b.style.background = data.status === 'sold' ? 'var(--success)' : (data.status === 'unsold' ? 'var(--danger)' : 'var(--accent)');
+        const b = document.getElementById('player-status-badge'); b.innerText = data.status.toUpperCase(); 
+        b.style.background = data.status === 'sold' ? 'var(--success)' : (data.status === 'unsold' ? 'var(--danger)' : 'var(--accent)');
         const overlay = document.getElementById('sold-overlay'); if (data.status === 'sold' && overlay) { overlay.classList.remove('hidden-overlay'); setTimeout(() => { overlay.classList.add('hidden-overlay'); }, 3000); }
         const tDisp = document.getElementById('timer-display');
         if (data.timerEnd && data.timerEnd > 0 && data.status === 'active') {
