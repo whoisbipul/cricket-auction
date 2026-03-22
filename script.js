@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, collection, addDoc, onSnapshot, query, where, getDocs, updateDoc, increment, deleteDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, collection, addDoc, onSnapshot, query, where, getDocs, updateDoc, increment, deleteDoc, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = { apiKey: "AIzaSyCF5fo4zu4G7qD_wllxSy5cJPp1BTMCPog", authDomain: "cricketauction-dac71.firebaseapp.com", projectId: "cricketauction-dac71", storageBucket: "cricketauction-dac71.firebasestorage.app", messagingSenderId: "767785113298", appId: "1:767785113298:web:bb87d9d2ea845a2a95bf0b", measurementId: "G-GNP2EJ5G6Q" };
@@ -9,6 +9,7 @@ const auth = getAuth(app);
 
 let currentUser = null, currentRole = null, currentTeamId = null, globalCategories = [], timerInterval = null, auctionRules = null;
 
+// --- AUTH & INITIALIZATION ---
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         currentUser = user;
@@ -55,6 +56,7 @@ function syncSquadTracker() {
     });
 }
 
+// --- SETUP FUNCTIONS ---
 export async function loginUser() {
     const e = document.getElementById('email').value, p = document.getElementById('password').value;
     try { const res = await signInWithEmailAndPassword(auth, e, p); const uDoc = await getDoc(doc(db, "users", res.user.uid)); if(uDoc.data().role === 'admin') window.location.href="admin.html"; else window.location.href="auction.html"; } catch(err) { alert(err.message); }
@@ -87,13 +89,12 @@ export async function addPlayer() {
         basePrice: document.getElementById('player-base-price').value, 
         role: document.getElementById('player-role').value, 
         photo: document.getElementById('player-photo').value, 
-        realTeam: document.getElementById('player-real-team').value, // NEW
-        status: "unsold" 
+        realTeam: document.getElementById('player-real-team').value,
+        status: "unsold",
+        createdAt: Date.now() // Added for sorting
     };
     await addDoc(collection(db, "players"), pData); 
-    document.getElementById('player-name').value = ""; 
-    document.getElementById('player-photo').value = "";
-    document.getElementById('player-real-team').value = "";
+    document.getElementById('player-name').value = ""; document.getElementById('player-photo').value = "";
 }
 
 export function updateBasePrice() {
@@ -112,6 +113,7 @@ export async function deletePlayer(id) { if(confirm("Delete?")) await deleteDoc(
 export async function resetLeague() { if(confirm("Clear?")) { await deleteDoc(doc(db, "settings", "leagueInfo")); location.reload(); } }
 export async function resetRules() { if(confirm("Reset?")) { await deleteDoc(doc(db, "settings", "auctionRules")); location.reload(); } }
 
+// --- AUCTION ENGINE ---
 export async function nextPlayer() {
     const cat = document.getElementById('auction-category-select').value;
     const q = query(collection(db, "players"), where("category", "==", cat), where("status", "==", "unsold"));
@@ -119,14 +121,7 @@ export async function nextPlayer() {
     const list = []; snap.forEach(d => list.push({ id: d.id, ...d.data() }));
     const p = list[Math.floor(Math.random() * list.length)];
     const endTime = Date.now() + 31000;
-    await setDoc(doc(db, "settings", "activeAuction"), { 
-        playerId: p.id, name: p.name, category: p.category, 
-        basePrice: Number(p.basePrice), currentBid: Number(p.basePrice), 
-        highestBidder: "No Bids", highestBidderId: null, highestBidderTeamId: null, 
-        status: "active", role: p.role, photo: p.photo || "", 
-        realTeam: p.realTeam || "Unassigned", // NEW
-        timerEnd: endTime 
-    });
+    await setDoc(doc(db, "settings", "activeAuction"), { playerId: p.id, name: p.name, category: p.category, basePrice: Number(p.basePrice), currentBid: Number(p.basePrice), highestBidder: "No Bids", highestBidderId: null, highestBidderTeamId: null, status: "active", role: p.role, photo: p.photo || "", realTeam: p.realTeam || "Unassigned", timerEnd: endTime });
 }
 
 export async function bid() {
@@ -172,30 +167,36 @@ if (document.getElementById('teams-display')) {
     });
 }
 
+// --- OPTIMIZED PLAYER LISTENER (The Fix for Lagginess) ---
 if (document.getElementById('players-display')) {
-    onSnapshot(collection(db, "players"), (snap) => {
-        const d = document.getElementById('players-display'); if(d) d.innerHTML = "";
-        snap.forEach(doc => { const p = doc.data(); if(p.status === 'unsold') d.innerHTML += `<div class="team-pill" style="text-align:left;"><strong>${p.name}</strong><br><small>${p.category}</small><br><button class="btn-delete" onclick="handleDeletePlayer('${doc.id}')">Remove</button></div>`; });
+    // Only fetch the 10 most recent players to keep the Admin UI responsive
+    const qLatest = query(collection(db, "players"), orderBy("createdAt", "desc"), limit(10));
+    
+    onSnapshot(qLatest, (snap) => {
+        const d = document.getElementById('players-display');
+        if(d) {
+            d.innerHTML = "";
+            // Add a simple counter at the top of the display
+            d.innerHTML = `<div style="grid-column: 1/-1; margin-bottom:10px; color:var(--accent); font-size:12px; font-weight:700;">SHOWING LAST 10 ADDED PLAYERS</div>`;
+            
+            snap.forEach(doc => {
+                const p = doc.data();
+                const div = document.createElement('div'); div.className="team-pill"; div.style.textAlign="left";
+                div.innerHTML = `<strong>${p.name}</strong><br><small>${p.category}</small><br><button class="btn-delete" onclick="handleDeletePlayer('${doc.id}')">Remove</button>`;
+                d.appendChild(div);
+            });
+        }
     });
 }
 
 if (document.getElementById('display-p-name')) {
     onSnapshot(doc(db, "settings", "activeAuction"), (d) => {
         const data = d.data(); if(!data) return;
-        document.getElementById('display-p-name').innerText = data.name; 
-        document.getElementById('display-p-base').innerText = "$" + data.basePrice; 
-        document.getElementById('display-p-current-bid').innerText = "$" + data.currentBid; 
-        document.getElementById('display-p-bidder').innerText = data.highestBidder; 
-        document.getElementById('display-p-cat').innerText = data.category; 
-        document.getElementById('display-p-role').innerText = data.role;
-        document.getElementById('display-p-real-team').innerText = data.realTeam; // NEW
+        document.getElementById('display-p-name').innerText = data.name; document.getElementById('display-p-base').innerText = "$" + data.basePrice; document.getElementById('display-p-current-bid').innerText = "$" + data.currentBid; document.getElementById('display-p-bidder').innerText = data.highestBidder; document.getElementById('display-p-cat').innerText = data.category; document.getElementById('display-p-role').innerText = data.role;
+        if(document.getElementById('display-p-real-team')) document.getElementById('display-p-real-team').innerText = data.realTeam;
         document.getElementById('display-p-img').src = data.photo || "https://via.placeholder.com/300";
-        const b = document.getElementById('player-status-badge'); b.innerText = data.status.toUpperCase(); 
-        b.style.background = data.status === 'sold' ? 'var(--success)' : (data.status === 'unsold' ? 'var(--danger)' : 'var(--accent)');
-        
-        const overlay = document.getElementById('sold-overlay');
-        if (data.status === 'sold' && overlay) { overlay.classList.remove('hidden-overlay'); setTimeout(() => { overlay.classList.add('hidden-overlay'); }, 3000); }
-
+        const b = document.getElementById('player-status-badge'); b.innerText = data.status.toUpperCase(); b.style.background = data.status === 'sold' ? 'var(--success)' : (data.status === 'unsold' ? 'var(--danger)' : 'var(--accent)');
+        const overlay = document.getElementById('sold-overlay'); if (data.status === 'sold' && overlay) { overlay.classList.remove('hidden-overlay'); setTimeout(() => { overlay.classList.add('hidden-overlay'); }, 3000); }
         const tDisp = document.getElementById('timer-display');
         if (data.timerEnd && data.timerEnd > 0 && data.status === 'active') {
              if(timerInterval) clearInterval(timerInterval);
